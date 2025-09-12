@@ -171,6 +171,44 @@ const simulateExecution = async (code, language) => {
   });
 };
 
+/**
+ * @swagger
+ * /api/execute:
+ *   post:
+ *     tags: [Code Execution]
+ *     summary: 执行想法代码
+ *     description: 根据用户提供的想法生成代码并执行，返回执行结果
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ExecutionRequest'
+ *     responses:
+ *       200:
+ *         description: 执行成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ExecutionResult'
+ *       400:
+ *         description: 请求参数错误或想法无效
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: 请求频率过高
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // 执行想法
 router.post('/', executionRateLimit, asyncHandler(async (req, res) => {
   const { idea, language = 'python', options = {} } = req.body;
@@ -328,6 +366,41 @@ router.post('/', executionRateLimit, asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * @swagger
+ * /api/execute/{executionId}:
+ *   get:
+ *     tags: [Code Execution]
+ *     summary: 获取执行结果
+ *     description: 根据执行ID获取特定的执行结果详情
+ *     parameters:
+ *       - in: path
+ *         name: executionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 执行任务的唯一标识符
+ *         example: '123e4567-e89b-12d3-a456-426614174000'
+ *     responses:
+ *       200:
+ *         description: 成功获取执行结果
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ExecutionResult'
+ *       404:
+ *         description: 执行记录不存在
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // 获取执行结果
 router.get('/:executionId', asyncHandler(async (req, res) => {
   const { executionId } = req.params;
@@ -353,6 +426,57 @@ router.get('/:executionId', asyncHandler(async (req, res) => {
   });
 }));
 
+/**
+ * @swagger
+ * /api/execute:
+ *   get:
+ *     tags: [Code Execution]
+ *     summary: 获取执行历史列表
+ *     description: 获取用户的执行历史记录，支持分页和筛选
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: 页码
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: 每页记录数
+ *       - in: query
+ *         name: language
+ *         schema:
+ *           type: string
+ *         description: 按编程语言筛选
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [success, error, pending]
+ *         description: 按执行状态筛选
+ *     responses:
+ *       200:
+ *         description: 成功获取执行历史
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/ExecutionResult'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ */
 // 获取执行历史
 router.get('/', asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, language, status } = req.query;

@@ -4,7 +4,34 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const databaseManager = require('../config/database');
 
-// 基础健康检查
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     tags: [Health Check]
+ *     summary: 基础健康检查
+ *     description: 检查服务的基本运行状态
+ *     responses:
+ *       200:
+ *         description: 服务运行正常
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: 'healthy'
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 uptime:
+ *                   type: number
+ *                   description: 服务运行时间（秒）
+ *                 version:
+ *                   type: string
+ *                   example: '1.0.0'
+ */
 router.get('/', asyncHandler(async (req, res) => {
   const startTime = Date.now();
   
@@ -91,7 +118,56 @@ router.get('/', asyncHandler(async (req, res) => {
   }
 }));
 
-// 详细健康检查
+/**
+ * @swagger
+ * /health/detailed:
+ *   get:
+ *     tags: [Health Check]
+ *     summary: 详细健康检查
+ *     description: 检查服务的详细状态，包括数据库连接、外部服务等
+ *     responses:
+ *       200:
+ *         description: 详细健康状态
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [healthy, degraded, unhealthy]
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 uptime:
+ *                   type: number
+ *                 version:
+ *                   type: string
+ *                 checks:
+ *                   type: object
+ *                   properties:
+ *                     database:
+ *                       type: object
+ *                       properties:
+ *                         status:
+ *                           type: string
+ *                         responseTime:
+ *                           type: number
+ *                     docker:
+ *                       type: object
+ *                       properties:
+ *                         status:
+ *                           type: string
+ *                         available:
+ *                           type: boolean
+ *                     memory:
+ *                       type: object
+ *                       properties:
+ *                         status:
+ *                           type: string
+ *                         usage:
+ *                           type: object
+ */
 router.get('/detailed', asyncHandler(async (req, res) => {
   const startTime = Date.now();
   

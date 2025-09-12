@@ -10,6 +10,7 @@ const databaseManager = require('./config/database');
 const { initializeDatabase } = require('./config/database');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 const { generalRateLimit } = require('./middleware/rateLimiter');
+const { swaggerSpec, swaggerUi, swaggerUiOptions } = require('./config/swagger');
 
 // 导入路由
 const apiRoutes = require('./routes/api');
@@ -58,6 +59,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 速率限制
 app.use(generalRateLimit);
+
+// API文档路由
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // 健康检查路由（不需要认证）
 app.use('/health', healthRoutes);
@@ -165,8 +173,10 @@ async function startServer() {
       
       if (process.env.NODE_ENV === 'development') {
         logger.info('🔧 开发模式已启用');
-        logger.info('📝 API文档: http://localhost:' + PORT + '/api');
       }
+      
+      logger.info('📚 API文档: http://localhost:' + PORT + '/api-docs');
+      logger.info('📄 API规范: http://localhost:' + PORT + '/api-docs.json');
     });
     
     // 保存服务器实例到全局变量

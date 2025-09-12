@@ -5,7 +5,41 @@ const logger = require('../utils/logger');
 const aiService = require('../services/aiService');
 const databaseManager = require('../config/database');
 
-// API信息和文档
+/**
+ * @swagger
+ * /api/info:
+ *   get:
+ *     tags: [API Info]
+ *     summary: 获取API基本信息
+ *     description: 返回API的基本信息，包括版本、描述、端点列表等
+ *     responses:
+ *       200:
+ *         description: 成功获取API信息
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         name:
+ *                           type: string
+ *                           example: 'Idea to MEU API'
+ *                         version:
+ *                           type: string
+ *                           example: '1.0.0'
+ *                         description:
+ *                           type: string
+ *                         endpoints:
+ *                           type: object
+ *                         features:
+ *                           type: array
+ *                           items:
+ *                             type: string
+ */
 router.get('/info', asyncHandler(async (req, res) => {
   logger.info('API信息请求');
   
@@ -38,7 +72,42 @@ router.get('/info', asyncHandler(async (req, res) => {
   });
 }));
 
-// 系统统计信息
+/**
+ * @swagger
+ * /api/stats:
+ *   get:
+ *     tags: [API Info]
+ *     summary: 获取系统统计信息
+ *     description: 返回系统运行统计数据，包括执行次数、成功率、资源使用等
+ *     responses:
+ *       200:
+ *         description: 成功获取统计信息
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         totalExecutions:
+ *                           type: integer
+ *                           description: 总执行次数
+ *                         successfulExecutions:
+ *                           type: integer
+ *                           description: 成功执行次数
+ *                         failedExecutions:
+ *                           type: integer
+ *                           description: 失败执行次数
+ *                         uptime:
+ *                           type: number
+ *                           description: 系统运行时间（秒）
+ *                         memoryUsage:
+ *                           type: object
+ *                           description: 内存使用情况
+ */
 router.get('/stats', asyncHandler(async (req, res) => {
   logger.info('系统统计请求');
   
@@ -62,7 +131,31 @@ router.get('/stats', asyncHandler(async (req, res) => {
   });
 }));
 
-// 支持的编程语言
+/**
+ * @swagger
+ * /api/languages:
+ *   get:
+ *     tags: [API Info]
+ *     summary: 获取支持的编程语言列表
+ *     description: 返回系统支持的所有编程语言及其详细信息
+ *     responses:
+ *       200:
+ *         description: 成功获取语言列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Language'
+ *                     count:
+ *                       type: integer
+ *                       description: 支持的语言数量
+ */
 router.get('/languages', asyncHandler(async (req, res) => {
   logger.info('支持语言列表请求');
   
@@ -117,7 +210,38 @@ router.get('/languages', asyncHandler(async (req, res) => {
   });
 }));
 
-// 代码模板
+/**
+ * @swagger
+ * /api/templates:
+ *   get:
+ *     tags: [Code Templates]
+ *     summary: 获取代码模板列表
+ *     description: 返回可用的代码模板，支持按语言筛选
+ *     parameters:
+ *       - in: query
+ *         name: language
+ *         schema:
+ *           type: string
+ *         description: 编程语言过滤器
+ *         example: 'python'
+ *     responses:
+ *       200:
+ *         description: 成功获取模板列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/CodeTemplate'
+ *                     count:
+ *                       type: integer
+ *                       description: 模板数量
+ */
 router.get('/templates', asyncHandler(async (req, res) => {
   const { language, category } = req.query;
   
@@ -169,7 +293,53 @@ router.get('/templates', asyncHandler(async (req, res) => {
   });
 }));
 
-// 想法验证
+/**
+ * @swagger
+ * /api/validate:
+ *   post:
+ *     tags: [Idea Validation]
+ *     summary: 验证想法可行性
+ *     description: 分析用户提供的想法，评估其技术可行性和实现复杂度
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idea
+ *             properties:
+ *               idea:
+ *                 type: string
+ *                 description: 要验证的想法描述
+ *                 example: '创建一个实时聊天应用'
+ *               language:
+ *                 type: string
+ *                 description: 首选编程语言
+ *                 example: 'javascript'
+ *               complexity:
+ *                 type: string
+ *                 enum: [simple, medium, complex]
+ *                 description: 期望的复杂度级别
+ *     responses:
+ *       200:
+ *         description: 验证成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ValidationResult'
+ *       400:
+ *         description: 请求参数错误
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post('/validate', asyncHandler(async (req, res) => {
   const { idea, language = 'python' } = req.body;
   
@@ -206,7 +376,49 @@ router.post('/validate', asyncHandler(async (req, res) => {
   }
 }));
 
-// 执行环境状态
+/**
+ * @swagger
+ * /api/execution/status:
+ *   get:
+ *     tags: [Execution]
+ *     summary: 获取执行环境状态
+ *     description: 返回当前执行环境的状态信息，包括资源使用情况和可用性
+ *     responses:
+ *       200:
+ *         description: 成功获取执行环境状态
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         status:
+ *                           type: string
+ *                           enum: [available, busy, maintenance]
+ *                           description: 执行环境状态
+ *                         activeExecutions:
+ *                           type: integer
+ *                           description: 当前活跃的执行任务数
+ *                         queueLength:
+ *                           type: integer
+ *                           description: 等待队列长度
+ *                         resourceUsage:
+ *                           type: object
+ *                           properties:
+ *                             cpu:
+ *                               type: number
+ *                               description: CPU使用率（百分比）
+ *                             memory:
+ *                               type: number
+ *                               description: 内存使用率（百分比）
+ *                             disk:
+ *                               type: number
+ *                               description: 磁盘使用率（百分比）
+ */
 router.get('/execution/status', asyncHandler(async (req, res) => {
   logger.info('执行环境状态请求');
   
