@@ -185,14 +185,210 @@ projects/*/meu_plan.json
 projects/meu_*/
 
 # Generated execution files
-projects/*/step_*.js
-projects/*/step_*.py
-projects/*/step_*.java
-projects/*/step_*.go
-projects/*/step_*.cpp
-projects/*/step_*.c
-projects/*/step_*.rs
+projects/*/step_*.*
 projects/*/*.txt
 projects/*/*.json
 projects/*/output/
 projects/*/temp/
+
+# Additional file types to exclude
+# Compiled files
+*.class
+*.o
+*.so
+*.dll
+*.exe
+*.app
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Archive files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.war
+*.ear
+*.sar
+*.class
+
+# Package files
+*.deb
+*.rpm
+*.msi
+*.msm
+*.msp
+
+# Media files
+*.mp3
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+*.m4v
+*.3gp
+*.3g2
+*.rm
+*.swf
+*.vob
+
+# Image files (large)
+*.psd
+*.ai
+*.eps
+*.tiff
+*.tif
+*.raw
+*.cr2
+*.nef
+*.orf
+*.sr2
+
+# Font files
+*.ttf
+*.otf
+*.woff
+*.woff2
+*.eot
+
+# Cache and temporary files
+*.cache
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.backup
+*.orig
+*.rej
+*~
+
+# System files
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+[Tt]humbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+PIPFILE.lock
+
+# Java specific
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+vendor/
+
+# Rust specific
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# C/C++ specific
+*.i*86
+*.x86_64
+*.hex
+
+# Security and sensitive files
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
+*.gpg
+*.asc
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
+.project
+.classpath
+.c9revisions/
+.settings/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# AWS
+.aws/
+
+# Local development
+.local/
+local.properties
