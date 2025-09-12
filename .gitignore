@@ -179,3 +179,7 @@ backend/build/
 # Configuration files with sensitive data
 config/production.json
 config/local.json
+
+# MEU project files
+projects/*/meu_plan.json
+projects/meu_*/

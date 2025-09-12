@@ -138,6 +138,47 @@ function getDatabase() {
     return mongoose.connection.db;
 }
 
+// 健康检查
+async function healthCheck() {
+    try {
+        if (!process.env.MONGODB_URI) {
+            return {
+                status: 'healthy',
+                message: '使用内存存储（未配置数据库）',
+                type: 'memory'
+            };
+        }
+        
+        if (!isConnected) {
+            return {
+                status: 'unhealthy',
+                message: 'MongoDB未连接',
+                type: 'mongodb'
+            };
+        }
+        
+        // 执行简单的ping操作
+        await mongoose.connection.db.admin().ping();
+        
+        return {
+            status: 'healthy',
+            message: 'MongoDB连接正常',
+            type: 'mongodb',
+            readyState: mongoose.connection.readyState,
+            host: mongoose.connection.host,
+            port: mongoose.connection.port,
+            name: mongoose.connection.name
+        };
+    } catch (error) {
+        return {
+            status: 'unhealthy',
+            message: `数据库健康检查失败: ${error.message}`,
+            type: 'mongodb',
+            error: error.message
+        };
+    }
+}
+
 module.exports = {
     config,
     getDatabaseConfig,
@@ -146,5 +187,6 @@ module.exports = {
     getConnectionStatus,
     initializeDatabase,
     getDatabase,
+    healthCheck,
     isConnected: () => isConnected
 };

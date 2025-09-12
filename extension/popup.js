@@ -5,6 +5,11 @@ let currentProject = null;
 let currentMode = 'stepByStep'; // 'stepByStep' or 'auto'
 let isProcessing = false;
 
+// API配置
+const API_BASE_URL = 'http://localhost:3000';
+const API_TIMEOUT = 60000; // 60秒超时
+const MAX_RETRIES = 3;
+
 // DOM元素
 const elements = {
     // 输入相关
@@ -47,6 +52,41 @@ const elements = {
     // 状态指示器
     statusIndicator: null
 };
+
+// API调用辅助函数
+async function apiCall(endpoint, options = {}, retries = MAX_RETRIES) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+            throw new Error('请求超时，请检查网络连接');
+        }
+        
+        if (retries > 0 && (error.name === 'TypeError' || error.message.includes('fetch'))) {
+            console.log(`API调用失败，重试中... (剩余重试次数: ${retries - 1})`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
+            return apiCall(endpoint, options, retries - 1);
+        }
+        
+        throw error;
+    }
+}
 
 // 初始化应用
 function initApp() {
@@ -256,7 +296,7 @@ async function handleAnalyze() {
         showLoading('正在分析您的想法...');
         updateStatus('processing', '分析中');
         
-        const response = await fetch('http://localhost:3000/api/ai/generate', {
+        const result = await apiCall('/api/meu/analyze', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -267,12 +307,6 @@ async function handleAnalyze() {
                 language
             })
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
         
         if (result.success) {
             displayResults(result.data);
@@ -290,7 +324,17 @@ async function handleAnalyze() {
         
     } catch (error) {
         console.error('Analysis error:', error);
-        showNotification(`分析失败: ${error.message}`, 'error');
+        let errorMessage = '分析失败';
+        
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            errorMessage = '无法连接到服务器，请确保后端服务正在运行';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = `服务器错误: ${error.message}`;
+        } else {
+            errorMessage = `分析失败: ${error.message}`;
+        }
+        
+        showNotification(errorMessage, 'error');
         updateStatus('error', '分析失败');
     } finally {
         hideLoading();
@@ -320,11 +364,12 @@ function displayResults(data) {
     }
     
     // 如果有MEU计划，切换到MEU标签页并显示
-    if (data.meuPlan) {
+    if (data.plan || data.meuPlan) {
         currentProject = {
-            id: generateProjectId(),
+            id: data.projectId || generateProjectId(),
             idea: elements.ideaInput?.value,
-            plan: data.meuPlan,
+            language: elements.languageSelect?.value || 'javascript',
+            plan: data.plan || data.meuPlan,
             currentStep: 0,
             status: 'ready'
         };
@@ -482,22 +527,20 @@ async function executeCurrentStep() {
         currentStep.status = 'in_progress';
         renderStepsList(currentProject);
         
-        const response = await fetch('http://localhost:3000/api/meu/execute-step', {
+        const result = await apiCall('/api/execute', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                projectId: currentProject.id,
-                stepIndex: currentProject.currentStep
+                idea: currentStep.description || currentStep.title,
+                language: currentProject.language || 'javascript',
+                options: {
+                    projectId: currentProject.id,
+                    stepIndex: currentProject.currentStep
+                }
             })
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
         
         if (result.success) {
             // 更新步骤状态为完成
@@ -528,7 +571,18 @@ async function executeCurrentStep() {
         console.error('Step execution error:', error);
         currentStep.status = 'error';
         renderStepsList(currentProject);
-        showNotification(`步骤执行失败: ${error.message}`, 'error');
+        
+        let errorMessage = '步骤执行失败';
+        
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            errorMessage = '无法连接到服务器，请确保后端服务正在运行';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = `服务器错误: ${error.message}`;
+        } else {
+            errorMessage = `步骤执行失败: ${error.message}`;
+        }
+        
+        showNotification(errorMessage, 'error');
         updateStatus('error', '执行失败');
     } finally {
         hideLoading();

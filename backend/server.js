@@ -38,8 +38,10 @@ app.use(cors({
   origin: [
     'chrome-extension://*',
     'moz-extension://*',
-    'http://localhost:*',
-    'https://localhost:*'
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'https://localhost:8080',
+    'https://localhost:3000'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
