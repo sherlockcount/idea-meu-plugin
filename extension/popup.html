@@ -86,6 +86,7 @@
           <div class="tabs">
             <button class="tab-btn active" data-tab="output">输出</button>
             <button class="tab-btn" data-tab="code">代码</button>
+            <button class="tab-btn" data-tab="meu">MEU</button>
             <button class="tab-btn" data-tab="logs">日志</button>
           </div>
           <div class="tab-content">
@@ -98,6 +99,42 @@
               <pre id="codeContent" class="code-content">
                 <!-- 生成的代码将在这里显示 -->
               </pre>
+            </div>
+            <div id="meuTab" class="tab-pane">
+              <div class="meu-container">
+                <div class="meu-mode-selector">
+                  <label>
+                    <input type="radio" name="mode" value="simple" checked>
+                    简单模式 (直接执行)
+                  </label>
+                  <label>
+                    <input type="radio" name="mode" value="meu">
+                    MEU模式 (逐步构建)
+                  </label>
+                </div>
+                
+                <div id="meuProject" class="meu-project" style="display: none;">
+                  <div class="meu-header">
+                    <h3 id="meuTitle">MEU项目</h3>
+                    <div class="meu-progress">
+                      <div class="progress-bar">
+                        <div id="meuProgressBar" class="progress-fill"></div>
+                      </div>
+                      <span id="meuProgressText">0/0 步骤完成</span>
+                    </div>
+                  </div>
+                  
+                  <div class="meu-steps" id="meuSteps">
+                    <!-- MEU步骤将在这里动态生成 -->
+                  </div>
+                  
+                  <div class="meu-actions">
+                    <button id="meuContinueBtn" class="btn btn-primary">继续下一步</button>
+                    <button id="meuAutoBtn" class="btn btn-secondary">自动执行</button>
+                    <button id="meuResetBtn" class="btn btn-danger">重置项目</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div id="logsTab" class="tab-pane">
               <div id="logsContent" class="logs-content">

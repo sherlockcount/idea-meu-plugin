@@ -75,6 +75,9 @@ function bindEvents() {
     });
   });
   
+  // MEU功能初始化
+  initMEUFeatures();
+  
   // 输入框键盘事件
   elements.ideaInput?.addEventListener('keydown', (e) => {
     // Ctrl/Cmd + Enter 执行
@@ -639,6 +642,263 @@ async function handleClearHistory() {
   }
 }
 
+// MEU功能实现
+function initMEUFeatures() {
+  let currentProject = null;
+  let currentMode = 'simple';
+  const API_BASE_URL = 'http://localhost:3000';
+  
+  // 模式切换
+  document.querySelectorAll('input[name="mode"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      currentMode = e.target.value;
+      const meuProject = document.getElementById('meuProject');
+      if (currentMode === 'meu') {
+        meuProject.style.display = 'block';
+      } else {
+        meuProject.style.display = 'none';
+      }
+    });
+  });
+  
+  // MEU按钮事件
+  document.getElementById('meuContinueBtn')?.addEventListener('click', () => {
+    if (currentProject) {
+      executeNextStep();
+    }
+  });
+  
+  document.getElementById('meuAutoBtn')?.addEventListener('click', () => {
+    if (currentProject) {
+      autoExecuteSteps();
+    }
+  });
+  
+  document.getElementById('meuResetBtn')?.addEventListener('click', () => {
+    resetMEUProject();
+  });
+  
+  // 创建MEU项目
+  async function createMEUProject(idea) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/meu/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ idea })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create MEU project');
+      }
+      
+      const result = await response.json();
+      currentProject = result;
+      displayMEUProject(result);
+      return result;
+    } catch (error) {
+      console.error('Error creating MEU project:', error);
+      showError('创建MEU项目失败: ' + error.message);
+      return null;
+    }
+  }
+  
+  // 显示MEU项目
+  function displayMEUProject(project) {
+    const titleEl = document.getElementById('meuTitle');
+    const stepsEl = document.getElementById('meuSteps');
+    const progressEl = document.getElementById('meuProgressBar');
+    const progressTextEl = document.getElementById('meuProgressText');
+    
+    if (titleEl) titleEl.textContent = project.title || 'MEU项目';
+    
+    // 显示步骤
+    if (stepsEl && project.steps) {
+      stepsEl.innerHTML = '';
+      project.steps.forEach((step, index) => {
+        const stepEl = createStepElement(step, index);
+        stepsEl.appendChild(stepEl);
+      });
+    }
+    
+    // 更新进度
+    updateProgress(project);
+    
+    // 显示项目容器
+    const meuProject = document.getElementById('meuProject');
+    if (meuProject) {
+      meuProject.style.display = 'block';
+    }
+  }
+  
+  // 创建步骤元素
+  function createStepElement(step, index) {
+    const stepEl = document.createElement('div');
+    stepEl.className = `meu-step ${step.status || 'pending'}`;
+    stepEl.innerHTML = `
+      <div class="step-status ${step.status || 'pending'}">
+        ${step.status === 'completed' ? '✓' : step.status === 'current' ? '▶' : (index + 1)}
+      </div>
+      <div class="step-content">
+        <div class="step-title">${step.title}</div>
+        <div class="step-description">${step.description}</div>
+      </div>
+    `;
+    return stepEl;
+  }
+  
+  // 更新进度
+  function updateProgress(project) {
+    if (!project.steps) return;
+    
+    const completed = project.steps.filter(s => s.status === 'completed').length;
+    const total = project.steps.length;
+    const percentage = total > 0 ? (completed / total) * 100 : 0;
+    
+    const progressEl = document.getElementById('meuProgressBar');
+    const progressTextEl = document.getElementById('meuProgressText');
+    
+    if (progressEl) {
+      progressEl.style.width = `${percentage}%`;
+    }
+    
+    if (progressTextEl) {
+      progressTextEl.textContent = `${completed}/${total} 步骤完成`;
+    }
+  }
+  
+  // 执行下一步
+  async function executeNextStep() {
+    if (!currentProject) return;
+    
+    const nextStep = currentProject.steps.find(s => s.status === 'pending');
+    if (!nextStep) {
+      showNotification('所有步骤已完成！', 'success');
+      return;
+    }
+    
+    try {
+      // 标记当前步骤
+      nextStep.status = 'current';
+      displayMEUProject(currentProject);
+      
+      const response = await fetch(`${API_BASE_URL}/api/meu/execute-step`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          projectId: currentProject.id,
+          stepIndex: currentProject.steps.indexOf(nextStep)
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to execute step');
+      }
+      
+      const result = await response.json();
+      
+      // 更新步骤状态
+      nextStep.status = 'completed';
+      nextStep.result = result;
+      
+      displayMEUProject(currentProject);
+      showNotification(`步骤 "${nextStep.title}" 执行完成`, 'success');
+      
+    } catch (error) {
+      console.error('Error executing step:', error);
+      nextStep.status = 'pending';
+      displayMEUProject(currentProject);
+      showError('执行步骤失败: ' + error.message);
+    }
+  }
+  
+  // 自动执行所有步骤
+  async function autoExecuteSteps() {
+    if (!currentProject) return;
+    
+    const pendingSteps = currentProject.steps.filter(s => s.status === 'pending');
+    
+    for (const step of pendingSteps) {
+      await executeNextStep();
+      // 添加延迟避免过快执行
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  
+  // 重置MEU项目
+  function resetMEUProject() {
+    currentProject = null;
+    const meuProject = document.getElementById('meuProject');
+    if (meuProject) {
+      meuProject.style.display = 'none';
+    }
+    
+    // 重置模式选择
+    const simpleMode = document.querySelector('input[value="simple"]');
+    if (simpleMode) {
+      simpleMode.checked = true;
+      currentMode = 'simple';
+    }
+  }
+  
+  // 扩展原有的执行函数以支持MEU模式
+  const originalHandleExecute = handleExecute;
+  window.handleExecute = async function() {
+    const idea = elements.ideaInput?.value.trim();
+    
+    if (currentMode === 'meu') {
+      // 输入验证
+      const validation = validateInput(idea);
+      if (!validation.valid) {
+        showNotification(validation.message, 'warning');
+        elements.ideaInput?.focus();
+        return;
+      }
+      
+      if (isExecuting) {
+        showNotification('正在执行中，请稍候', 'info');
+        return;
+      }
+      
+      try {
+        isExecuting = true;
+        updateStatus('分析中', 'executing');
+        
+        // 切换到MEU标签页
+        const meuTab = document.querySelector('[data-tab="meu"]');
+        if (meuTab) {
+          meuTab.click();
+        }
+        
+        // 创建MEU项目
+        await createMEUProject(idea);
+        
+        // 保存到历史记录
+        await saveToHistory(idea);
+        
+        updateStatus('就绪', 'ready');
+        showNotification('MEU项目创建完成', 'success');
+        
+        // 清空输入框
+        elements.ideaInput.value = '';
+        
+      } catch (error) {
+        console.error('MEU执行失败:', error);
+        showError(error.message || 'MEU执行失败，请重试');
+        updateStatus('错误', 'error');
+      } finally {
+        isExecuting = false;
+      }
+    } else {
+      // 使用原有的简单模式
+      return originalHandleExecute();
+    }
+  };
+}
+
 // 添加CSS样式到状态点
 const style = document.createElement('style');
 style.textContent = `
@@ -694,6 +954,153 @@ style.textContent = `
   .help-text small {
     color: #6b7280;
     font-size: 11px;
+  }
+  
+  /* MEU样式 */
+  .meu-container {
+    padding: 16px;
+  }
+  
+  .meu-mode-selector {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+  
+  .meu-mode-selector label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .meu-project {
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 16px;
+    background: white;
+  }
+  
+  .meu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e1e5e9;
+  }
+  
+  .meu-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .progress-bar {
+    width: 120px;
+    height: 6px;
+    background: #e1e5e9;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #45a049);
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  
+  .meu-steps {
+    margin-bottom: 16px;
+  }
+  
+  .meu-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    background: white;
+    transition: all 0.2s ease;
+  }
+  
+  .meu-step.completed {
+    background: #f0f9f0;
+    border-color: #4CAF50;
+  }
+  
+  .meu-step.current {
+    background: #fff3cd;
+    border-color: #ffc107;
+  }
+  
+  .meu-step.pending {
+    background: #f8f9fa;
+    border-color: #e1e5e9;
+  }
+  
+  .step-status {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  
+  .step-status.completed {
+    background: #4CAF50;
+    color: white;
+  }
+  
+  .step-status.current {
+    background: #ffc107;
+    color: white;
+  }
+  
+  .step-status.pending {
+    background: #e1e5e9;
+    color: #666;
+  }
+  
+  .step-content {
+    flex: 1;
+  }
+  
+  .step-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  
+  .step-description {
+    font-size: 12px;
+    color: #666;
+  }
+  
+  .meu-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  
+  .btn-danger {
+    background: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+  }
+  
+  .btn-danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
   }
 `;
 document.head.appendChild(style);

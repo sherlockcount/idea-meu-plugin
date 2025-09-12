@@ -62,6 +62,7 @@ app.use('/health', healthRoutes);
 app.use('/api', apiRoutes);
 app.use('/api/execute', executeRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/meu', require('./routes/meu'));
 
 // 根路由
 app.get('/', (req, res) => {
