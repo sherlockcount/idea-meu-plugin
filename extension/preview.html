@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idea to MEU Plugin - 前端预览</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .tab-active {
+            @apply bg-blue-500 text-white shadow-md;
+        }
+        .tab-inactive {
+            @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .5;
+            }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Idea to MEU Plugin - 前端界面预览</h1>
+        
+        <!-- 插件容器 -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden" style="width: 400px; height: 600px; margin: 0 auto;">
+            <!-- 头部 -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-white font-semibold text-lg">Idea to MEU</h2>
+                            <p class="text-blue-100 text-xs">AI驱动的项目构建助手</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-white text-xs">就绪</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页导航 -->
+            <div class="flex bg-gray-50 border-b border-gray-200">
+                <button class="tab-active flex-1 py-3 px-4 text-sm font-medium transition-all duration-200" data-tab="input">
+                    输入
+                </button>
+                <button class="tab-inactive flex-1 py-3 px-4 text-sm font-medium transition-all duration-200" data-tab="meu">
+                    MEU
+                </button>
+                <button class="tab-inactive flex-1 py-3 px-4 text-sm font-medium transition-all duration-200" data-tab="history">
+                    历史
+                </button>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="p-4 h-96 overflow-y-auto">
+                <!-- 输入标签页 -->
+                <div id="inputTab" class="tab-content">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">项目想法</label>
+                            <div class="relative">
+                                <textarea 
+                                    class="w-full h-24 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                                    placeholder="描述您的项目想法，例如：创建一个待办事项管理应用..."
+                                    maxlength="1000">创建一个现代化的待办事项管理应用，支持任务分类、优先级设置和进度跟踪</textarea>
+                                <span class="absolute bottom-3 right-3 text-xs text-gray-400">67/1000</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">复杂度</label>
+                                <select class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="simple">简单</option>
+                                    <option value="medium" selected>中等</option>
+                                    <option value="complex">复杂</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">语言</label>
+                                <select class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="javascript" selected>JavaScript</option>
+                                    <option value="python">Python</option>
+                                    <option value="java">Java</option>
+                                    <option value="cpp">C++</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                            🚀 开始分析
+                        </button>
+                        
+                        <!-- 结果区域 -->
+                        <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+                            <h3 class="font-medium text-gray-800 mb-2">分析结果</h3>
+                            <p class="text-sm text-gray-600 mb-3">基于您的想法，我将创建一个包含以下功能的待办事项应用：任务创建、分类管理、优先级设置、进度跟踪等核心功能。</p>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 bg-green-500 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors">
+                                    📥 下载代码
+                                </button>
+                                <button class="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
+                                    ➡️ 继续构建
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MEU标签页 -->
+                <div id="meuTab" class="tab-content hidden">
+                    <div class="space-y-4">
+                        <!-- 模式选择 -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <button class="p-3 border-2 border-blue-500 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium transition-all duration-200">
+                                📋 逐步构建
+                            </button>
+                            <button class="p-3 border-2 border-gray-200 bg-gray-50 text-gray-600 rounded-xl text-sm font-medium transition-all duration-200">
+                                🤖 自动执行
+                            </button>
+                        </div>
+                        
+                        <!-- 项目进度 -->
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border border-blue-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">项目进度</h3>
+                                <span class="text-sm text-blue-600 font-medium">2/5</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: 40%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 步骤列表 -->
+                        <div class="space-y-3">
+                            <!-- 已完成步骤 -->
+                            <div class="bg-white rounded-xl border-2 border-green-200 p-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <h4 class="text-sm font-semibold text-gray-800">步骤 1: 项目结构设计</h4>
+                                            <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">已完成</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mt-1">创建基础项目结构和文件组织</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 当前步骤 -->
+                            <div class="bg-white rounded-xl border-2 border-blue-500 p-4 shadow-lg">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white animate-spin" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <h4 class="text-sm font-semibold text-gray-800">步骤 2: 核心功能实现</h4>
+                                            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">进行中</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mt-1">实现任务创建、编辑和删除功能</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 待执行步骤 -->
+                            <div class="bg-white rounded-xl border-2 border-gray-200 p-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center">
+                                        <span class="text-white text-xs font-bold">3</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <h4 class="text-sm font-semibold text-gray-800">步骤 3: 界面设计</h4>
+                                            <span class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">待执行</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mt-1">设计用户界面和交互体验</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 操作按钮 -->
+                        <div class="flex space-x-2 pt-4">
+                            <button class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                                ▶️ 执行步骤
+                            </button>
+                            <button class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-600 transition-colors">
+                                ✏️ 修改步骤
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 历史记录标签页 -->
+                <div id="historyTab" class="tab-content hidden">
+                    <div class="space-y-3">
+                        <!-- 历史记录项 -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-sm font-semibold text-gray-800 truncate">创建一个现代化的待办事项管理应用</h4>
+                                    <div class="flex items-center space-x-2 mt-1">
+                                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">JavaScript</span>
+                                        <span class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">中等</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">2024-01-15 14:30:25</p>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-500 transition-colors duration-200">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-sm font-semibold text-gray-800 truncate">开发一个在线聊天应用</h4>
+                                    <div class="flex items-center space-x-2 mt-1">
+                                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">Python</span>
+                                        <span class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">复杂</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">2024-01-14 09:15:42</p>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-500 transition-colors duration-200">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full mt-4 bg-red-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-600 transition-colors">
+                            🗑️ 清空历史记录
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 说明文字 -->
+        <div class="mt-8 text-center text-gray-600">
+            <p class="text-sm">这是使用 <strong>Tailwind CSS</strong> 重构后的现代化界面预览</p>
+            <p class="text-xs mt-2">实际插件尺寸为 400x600px，适配浏览器扩展弹窗</p>
+        </div>
+    </div>
+
+    <script>
+        // 简单的标签页切换功能
+        document.querySelectorAll('[data-tab]').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.getAttribute('data-tab');
+                
+                // 更新按钮状态
+                document.querySelectorAll('[data-tab]').forEach(btn => {
+                    if (btn.getAttribute('data-tab') === tabName) {
+                        btn.className = btn.className.replace('tab-inactive', 'tab-active');
+                    } else {
+                        btn.className = btn.className.replace('tab-active', 'tab-inactive');
+                    }
+                });
+                
+                // 显示对应内容
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    if (content.id === `${tabName}Tab`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
