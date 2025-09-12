@@ -1,192 +1,312 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Idea → MEU</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idea to MEU</title>
+    <script src="tailwindcss-cdn.js"></script>
+    <style type="text/tailwindcss">
+        @theme {
+            --color-primary: #3b82f6;
+            --color-primary-dark: #1d4ed8;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+            --color-gray-50: #f9fafb;
+            --color-gray-100: #f3f4f6;
+            --color-gray-200: #e5e7eb;
+            --color-gray-300: #d1d5db;
+            --color-gray-400: #9ca3af;
+            --color-gray-500: #6b7280;
+            --color-gray-600: #4b5563;
+            --color-gray-700: #374151;
+            --color-gray-800: #1f2937;
+            --color-gray-900: #111827;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .tab-active {
+            @apply bg-blue-500 text-white shadow-lg;
+        }
+        
+        .tab-inactive {
+            @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <div class="logo">
-        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-        <span class="logo-text">Idea → MEU</span>
-      </div>
-      <div class="status-indicator" id="statusIndicator">
-        <div class="status-dot"></div>
-        <span class="status-text">就绪</span>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Input Section -->
-      <section class="input-section">
-        <div class="input-header">
-          <h2>💡 描述你的想法</h2>
-          <p>AI将帮你将想法转化为可执行代码</p>
-        </div>
-        <div class="input-container">
-          <textarea 
-            id="ideaInput" 
-            placeholder="描述你的想法，比如：创建一个计算斐波那契数列的函数"
-            rows="4"
-          ></textarea>
-        </div>
-          <div class="input-actions">
-            <button id="clearBtn" class="btn btn-secondary">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              清空
-            </button>
-            <button id="executeBtn" class="btn btn-primary">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="5,3 19,12 5,21" fill="currentColor"/>
-              </svg>
-              开始构建
-            </button>
-          </div>
-          
-          <div class="help-text">
-            <small>💡 快捷键：Ctrl/Cmd+Enter 执行，Ctrl/Cmd+K 聚焦输入框，Esc 清空</small>
-          </div>
-        </div>
-      </section>
-
-      <!-- Results Section -->
-      <section class="results-section" id="resultsSection" style="display: none;">
-        <div class="results-header">
-          <h3>🚀 执行结果</h3>
-          <div class="results-actions">
-            <button id="downloadBtn" class="btn btn-outline">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 2.58579 20.4142C2.21071 20.0391 2 19.5304 2 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="7,10 12,15 17,10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              下载代码
-            </button>
-            <button id="continueBtn" class="btn btn-primary">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <polyline points="9,18 15,12 9,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              继续扩展
-            </button>
-          </div>
-        </div>
-        <div class="results-content">
-          <div class="tabs">
-            <button class="tab-btn active" data-tab="output">输出</button>
-            <button class="tab-btn" data-tab="code">代码</button>
-            <button class="tab-btn" data-tab="meu">MEU</button>
-            <button class="tab-btn" data-tab="logs">日志</button>
-          </div>
-          <div class="tab-content">
-            <div id="outputTab" class="tab-pane active">
-              <div id="outputContent" class="output-content">
-                <!-- 执行结果将在这里显示 -->
-              </div>
-            </div>
-            <div id="codeTab" class="tab-pane">
-              <pre id="codeContent" class="code-content">
-                <!-- 生成的代码将在这里显示 -->
-              </pre>
-            </div>
-            <div id="meuTab" class="tab-pane">
-              <div class="meu-container">
-                <div class="meu-mode-selector">
-                  <label>
-                    <input type="radio" name="mode" value="simple" checked>
-                    简单模式 (直接执行)
-                  </label>
-                  <label>
-                    <input type="radio" name="mode" value="meu">
-                    MEU模式 (逐步构建)
-                  </label>
-                </div>
-                
-                <div id="meuProject" class="meu-project" style="display: none;">
-                  <div class="meu-header">
-                    <h3 id="meuTitle">MEU项目</h3>
-                    <div class="meu-progress">
-                      <div class="progress-bar">
-                        <div id="meuProgressBar" class="progress-fill"></div>
-                      </div>
-                      <span id="meuProgressText">0/0 步骤完成</span>
+<body class="w-96 min-h-[600px] bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div class="flex flex-col h-full">
+        <!-- Header -->
+        <div class="gradient-bg p-4 text-white">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
                     </div>
-                  </div>
-                  
-                  <div class="meu-steps" id="meuSteps">
-                    <!-- MEU步骤将在这里动态生成 -->
-                  </div>
-                  
-                  <div class="meu-actions">
-                    <button id="meuContinueBtn" class="btn btn-primary">继续下一步</button>
-                    <button id="meuAutoBtn" class="btn btn-secondary">自动执行</button>
-                    <button id="meuResetBtn" class="btn btn-danger">重置项目</button>
-                  </div>
+                    <div>
+                        <h1 class="text-lg font-bold">Idea to MEU</h1>
+                        <p class="text-xs opacity-90">智能项目构建助手</p>
+                    </div>
                 </div>
-              </div>
+                <div id="statusIndicator" class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-xs">就绪</span>
+                </div>
             </div>
-            <div id="logsTab" class="tab-pane">
-              <div id="logsContent" class="logs-content">
-                <!-- 执行日志将在这里显示 -->
-              </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex bg-white border-b border-gray-200">
+            <button class="tab-button flex-1 py-3 px-4 text-sm font-medium transition-all duration-200 tab-active" data-tab="input">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                    </svg>
+                    <span>创建</span>
+                </div>
+            </button>
+            <button class="tab-button flex-1 py-3 px-4 text-sm font-medium transition-all duration-200 tab-inactive" data-tab="meu">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                    </svg>
+                    <span>MEU</span>
+                </div>
+            </button>
+            <button class="tab-button flex-1 py-3 px-4 text-sm font-medium transition-all duration-200 tab-inactive" data-tab="history">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>历史</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-hidden">
+            <!-- Input Tab -->
+            <div id="inputTab" class="tab-content h-full p-6 space-y-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">项目想法</label>
+                        <div class="relative">
+                            <textarea id="ideaInput" 
+                                    placeholder="描述你的项目想法，例如：创建一个待办事项管理应用，支持分类和提醒功能..." 
+                                    class="w-full h-32 p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 resize-none text-sm"
+                                    maxlength="1000"></textarea>
+                            <div class="absolute bottom-3 right-3 text-xs text-gray-400" id="charCount">0/1000</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">复杂度</label>
+                            <select id="complexitySelect" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-sm">
+                                <option value="simple">简单 (1-3步)</option>
+                                <option value="medium" selected>中等 (4-8步)</option>
+                                <option value="complex">复杂 (9+步)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">编程语言</label>
+                            <select id="languageSelect" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-sm">
+                                <option value="javascript">JavaScript</option>
+                                <option value="python">Python</option>
+                                <option value="java">Java</option>
+                                <option value="cpp">C++</option>
+                                <option value="html">HTML/CSS</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <button id="analyzeBtn" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">
+                        <div class="flex items-center justify-center space-x-2">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>分析并生成MEU计划</span>
+                        </div>
+                    </button>
+                    
+                    <div class="flex space-x-2">
+                        <button id="downloadBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <div class="flex items-center justify-center space-x-2">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>下载</span>
+                            </div>
+                        </button>
+                        <button id="continueBtn" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <div class="flex items-center justify-center space-x-2">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>继续</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Area -->
+                <div id="resultsArea" class="hidden space-y-4">
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                        <div class="p-4 border-b border-gray-100">
+                            <h3 class="font-semibold text-gray-800 flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>分析结果</span>
+                            </h3>
+                        </div>
+                        <div class="p-4">
+                            <div id="outputContent" class="text-sm text-gray-600 whitespace-pre-wrap"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                        <div class="p-4 border-b border-gray-100">
+                            <h3 class="font-semibold text-gray-800 flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>生成的代码</span>
+                            </h3>
+                        </div>
+                        <div class="p-4">
+                            <pre id="codeContent" class="text-sm bg-gray-50 p-4 rounded-lg overflow-x-auto"><code></code></pre>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- Loading Section -->
-      <section class="loading-section" id="loadingSection" style="display: none;">
-        <div class="loading-animation">
-          <div class="loading-spinner"></div>
-          <div class="loading-text">
-            <h3>🤖 AI正在工作中...</h3>
-            <p id="loadingMessage">正在分析你的想法</p>
-          </div>
-        </div>
-        <div class="loading-steps">
-          <div class="step" id="step1">
-            <div class="step-icon">1</div>
-            <span>分析想法</span>
-          </div>
-          <div class="step" id="step2">
-            <div class="step-icon">2</div>
-            <span>生成代码</span>
-          </div>
-          <div class="step" id="step3">
-            <div class="step-icon">3</div>
-            <span>执行测试</span>
-          </div>
-          <div class="step" id="step4">
-            <div class="step-icon">4</div>
-            <span>返回结果</span>
-          </div>
-        </div>
-      </section>
-    </main>
+            <!-- MEU Tab -->
+            <div id="meuTab" class="tab-content hidden h-full p-6 space-y-6">
+                <!-- Mode Selector -->
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>执行模式</span>
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="stepByStepMode" class="mode-btn p-3 border-2 border-blue-500 bg-blue-50 text-blue-700 rounded-lg font-medium transition-all duration-200">
+                            <div class="text-center">
+                                <div class="text-sm font-semibold">逐步执行</div>
+                                <div class="text-xs opacity-75">手动控制每一步</div>
+                            </div>
+                        </button>
+                        <button id="autoMode" class="mode-btn p-3 border-2 border-gray-200 bg-gray-50 text-gray-600 rounded-lg font-medium transition-all duration-200 hover:border-gray-300">
+                            <div class="text-center">
+                                <div class="text-sm font-semibold">自动执行</div>
+                                <div class="text-xs opacity-75">全自动完成</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
 
-    <!-- History Section -->
-    <section class="history-section">
-      <div class="history-header">
-        <h3>📚 历史记录</h3>
-        <button id="clearHistoryBtn" class="btn btn-text">清空</button>
-      </div>
-      <div id="historyList" class="history-list">
-        <!-- 历史记录将在这里显示 -->
-      </div>
-    </section>
-  </div>
+                <!-- Project Progress -->
+                <div id="projectProgress" class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 hidden">
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>项目进度</span>
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">总体进度</span>
+                            <span id="progressText" class="font-medium text-gray-800">0/0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar" class="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
 
-  <script src="popup.js"></script>
+                <!-- Steps List -->
+                <div id="stepsList" class="space-y-3"></div>
+
+                <!-- Action Buttons -->
+                <div id="meuActions" class="flex space-x-3 hidden">
+                    <button id="executeStepBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200">
+                        <div class="flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>执行当前步骤</span>
+                        </div>
+                    </button>
+                    <button id="modifyStepBtn" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200">
+                        <div class="flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                            </svg>
+                            <span>修改步骤</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="historyTab" class="tab-content hidden h-full p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-semibold text-gray-800 flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>历史记录</span>
+                        </h3>
+                        <button id="clearHistoryBtn" class="text-sm text-red-500 hover:text-red-600 font-medium">
+                            清空历史
+                        </button>
+                    </div>
+                    <div id="historyList" class="space-y-3">
+                        <div class="text-center py-8 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-sm">暂无历史记录</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 shadow-2xl">
+                <div class="flex items-center space-x-4">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <div>
+                        <div class="font-semibold text-gray-800">处理中...</div>
+                        <div class="text-sm text-gray-600" id="loadingText">正在分析您的想法</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
 </body>
 </html>

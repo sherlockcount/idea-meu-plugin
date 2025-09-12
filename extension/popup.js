@@ -1,1106 +1,808 @@
-// 全局变量
-let currentExecutionId = null;
-let isExecuting = false;
+// Idea to MEU Plugin - Modern UI with Tailwind CSS
 
-// DOM 元素
+// 全局变量
+let currentProject = null;
+let currentMode = 'stepByStep'; // 'stepByStep' or 'auto'
+let isProcessing = false;
+
+// DOM元素
 const elements = {
-  ideaInput: null,
-  executeBtn: null,
-  clearBtn: null,
-  loadingSection: null,
-  resultsSection: null,
-  statusIndicator: null,
-  statusText: null,
-  outputContent: null,
-  codeContent: null,
-  logsContent: null,
-  historyList: null,
-  downloadBtn: null,
-  continueBtn: null,
-  clearHistoryBtn: null,
-  loadingMessage: null
+    // 输入相关
+    ideaInput: null,
+    complexitySelect: null,
+    languageSelect: null,
+    charCount: null,
+    analyzeBtn: null,
+    downloadBtn: null,
+    continueBtn: null,
+    
+    // 结果相关
+    resultsArea: null,
+    outputContent: null,
+    codeContent: null,
+    
+    // 标签页相关
+    tabButtons: null,
+    tabContents: null,
+    
+    // MEU相关
+    stepByStepMode: null,
+    autoMode: null,
+    projectProgress: null,
+    progressBar: null,
+    progressText: null,
+    stepsList: null,
+    meuActions: null,
+    executeStepBtn: null,
+    modifyStepBtn: null,
+    
+    // 历史记录相关
+    historyList: null,
+    clearHistoryBtn: null,
+    
+    // 加载相关
+    loadingOverlay: null,
+    loadingText: null,
+    
+    // 状态指示器
+    statusIndicator: null
 };
 
-// 初始化
-document.addEventListener('DOMContentLoaded', function() {
-  initializeElements();
-  bindEvents();
-  loadHistory();
-  updateStatus('就绪', 'ready');
-});
+// 初始化应用
+function initApp() {
+    initializeElements();
+    setupEventListeners();
+    setupTabSwitching();
+    loadHistory();
+    updateCharCount();
+    
+    console.log('Idea to MEU Plugin initialized with modern UI');
+}
 
 // 初始化DOM元素
 function initializeElements() {
-  elements.ideaInput = document.getElementById('ideaInput');
-  elements.executeBtn = document.getElementById('executeBtn');
-  elements.clearBtn = document.getElementById('clearBtn');
-  elements.loadingSection = document.getElementById('loadingSection');
-  elements.resultsSection = document.getElementById('resultsSection');
-  elements.statusIndicator = document.getElementById('statusIndicator');
-  elements.statusText = elements.statusIndicator?.querySelector('.status-text');
-  elements.outputContent = document.getElementById('outputContent');
-  elements.codeContent = document.getElementById('codeContent');
-  elements.logsContent = document.getElementById('logsContent');
-  elements.historyList = document.getElementById('historyList');
-  elements.downloadBtn = document.getElementById('downloadBtn');
-  elements.continueBtn = document.getElementById('continueBtn');
-  elements.clearHistoryBtn = document.getElementById('clearHistoryBtn');
-  elements.loadingMessage = document.getElementById('loadingMessage');
+    // 输入相关
+    elements.ideaInput = document.getElementById('ideaInput');
+    elements.complexitySelect = document.getElementById('complexitySelect');
+    elements.languageSelect = document.getElementById('languageSelect');
+    elements.charCount = document.getElementById('charCount');
+    elements.analyzeBtn = document.getElementById('analyzeBtn');
+    elements.downloadBtn = document.getElementById('downloadBtn');
+    elements.continueBtn = document.getElementById('continueBtn');
+    
+    // 结果相关
+    elements.resultsArea = document.getElementById('resultsArea');
+    elements.outputContent = document.getElementById('outputContent');
+    elements.codeContent = document.getElementById('codeContent');
+    
+    // 标签页相关
+    elements.tabButtons = document.querySelectorAll('.tab-button');
+    elements.tabContents = document.querySelectorAll('.tab-content');
+    
+    // MEU相关
+    elements.stepByStepMode = document.getElementById('stepByStepMode');
+    elements.autoMode = document.getElementById('autoMode');
+    elements.projectProgress = document.getElementById('projectProgress');
+    elements.progressBar = document.getElementById('progressBar');
+    elements.progressText = document.getElementById('progressText');
+    elements.stepsList = document.getElementById('stepsList');
+    elements.meuActions = document.getElementById('meuActions');
+    elements.executeStepBtn = document.getElementById('executeStepBtn');
+    elements.modifyStepBtn = document.getElementById('modifyStepBtn');
+    
+    // 历史记录相关
+    elements.historyList = document.getElementById('historyList');
+    elements.clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    
+    // 加载相关
+    elements.loadingOverlay = document.getElementById('loadingOverlay');
+    elements.loadingText = document.getElementById('loadingText');
+    
+    // 状态指示器
+    elements.statusIndicator = document.getElementById('statusIndicator');
 }
 
-// 绑定事件
-function bindEvents() {
-  // 执行按钮
-  elements.executeBtn?.addEventListener('click', handleExecute);
-  
-  // 清空按钮
-  elements.clearBtn?.addEventListener('click', () => {
-    elements.ideaInput.value = '';
-    elements.ideaInput.focus();
-  });
-  
-  // 下载按钮
-  elements.downloadBtn?.addEventListener('click', handleDownload);
-  
-  // 继续按钮
-  elements.continueBtn?.addEventListener('click', handleContinue);
-  
-  // 清空历史按钮
-  elements.clearHistoryBtn?.addEventListener('click', handleClearHistory);
-  
-  // Tab切换
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      switchTab(e.target.dataset.tab);
+// 设置事件监听器
+function setupEventListeners() {
+    // 输入相关事件
+    elements.ideaInput?.addEventListener('input', updateCharCount);
+    elements.analyzeBtn?.addEventListener('click', handleAnalyze);
+    elements.downloadBtn?.addEventListener('click', handleDownload);
+    elements.continueBtn?.addEventListener('click', handleContinue);
+    
+    // MEU模式切换
+    elements.stepByStepMode?.addEventListener('click', () => setMode('stepByStep'));
+    elements.autoMode?.addEventListener('click', () => setMode('auto'));
+    
+    // MEU操作按钮
+    elements.executeStepBtn?.addEventListener('click', executeCurrentStep);
+    elements.modifyStepBtn?.addEventListener('click', modifyCurrentStep);
+    
+    // 历史记录
+    elements.clearHistoryBtn?.addEventListener('click', clearHistory);
+    
+    // 键盘快捷键
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+}
+
+// 设置标签页切换
+function setupTabSwitching() {
+    elements.tabButtons?.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+            switchTab(tabName);
+        });
     });
-  });
-  
-  // MEU功能初始化
-  initMEUFeatures();
-  
-  // 输入框键盘事件
-  elements.ideaInput?.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + Enter 执行
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleExecute();
-    }
-    
-    // Escape 清空输入
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      elements.ideaInput.value = '';
-      elements.ideaInput.blur();
-    }
-  });
-  
-  // 输入框实时字符计数
-  elements.ideaInput?.addEventListener('input', (e) => {
-    const length = e.target.value.length;
-    const maxLength = 500;
-    
-    // 更新字符计数显示
-    let counter = document.getElementById('char-counter');
-    if (!counter) {
-      counter = document.createElement('div');
-      counter.id = 'char-counter';
-      counter.className = 'char-counter';
-      elements.ideaInput.parentNode.appendChild(counter);
-    }
-    
-    counter.textContent = `${length}/${maxLength}`;
-    counter.className = `char-counter ${length > maxLength * 0.9 ? 'warning' : ''}`;
-  });
-  
-  // 全局键盘快捷键
-  document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + K 聚焦输入框
-    if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      elements.ideaInput?.focus();
-    }
-    
-    // Ctrl/Cmd + H 切换到历史标签
-    if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      switchTab('history');
-    }
-    
-    // Ctrl/Cmd + R 切换到结果标签
-    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      switchTab('results');
-    }
-  });
 }
 
-// 验证用户输入
-function validateInput(idea) {
-  if (!idea || idea.length < 3) {
-    return { valid: false, message: '请输入至少3个字符的想法描述' };
-  }
-  
-  if (idea.length > 500) {
-    return { valid: false, message: '想法描述不能超过500个字符' };
-  }
-  
-  // 检查是否包含恶意内容
-  const maliciousPatterns = [
-    /rm\s+-rf/i,
-    /del\s+\/[sq]/i,
-    /format\s+c:/i,
-    /__import__\s*\(\s*['"]os['"]\s*\)/i
-  ];
-  
-  for (const pattern of maliciousPatterns) {
-    if (pattern.test(idea)) {
-      return { valid: false, message: '输入内容包含不安全的命令，请重新输入' };
-    }
-  }
-  
-  return { valid: true };
-}
-
-// 处理执行
-async function handleExecute() {
-  const idea = elements.ideaInput?.value.trim();
-  
-  // 输入验证
-  const validation = validateInput(idea);
-  if (!validation.valid) {
-    showNotification(validation.message, 'warning');
-    elements.ideaInput?.focus();
-    return;
-  }
-  
-  if (isExecuting) {
-    showNotification('正在执行中，请稍候', 'info');
-    return;
-  }
-  
-  try {
-    isExecuting = true;
-    showLoading();
-    updateStatus('执行中', 'executing');
-    
-    // 显示执行开始通知
-    showNotification('开始执行你的想法...', 'info');
-    
-    // 保存到历史记录
-    await saveToHistory(idea);
-    
-    // 调用后端API
-    const result = await executeIdea(idea);
-    
-    // 显示结果
-    showResults(result);
-    updateStatus('完成', 'completed');
-    
-    // 显示成功通知
-    showNotification('执行完成！', 'success');
-    
-    // 清空输入框
-    elements.ideaInput.value = '';
-    
-  } catch (error) {
-    console.error('执行失败:', error);
-    showError(error.message || '执行失败，请重试');
-    updateStatus('错误', 'error');
-  } finally {
-    isExecuting = false;
-    hideLoading();
-  }
-}
-
-// 检查后端服务连接
-async function checkBackendConnection() {
-  const API_BASE = 'http://localhost:3000';
-  try {
-    const response = await fetch(`${API_BASE}/health`, {
-      method: 'GET',
-      timeout: 5000
+// 切换标签页
+function switchTab(tabName) {
+    // 更新按钮状态
+    elements.tabButtons?.forEach(btn => {
+        if (btn.getAttribute('data-tab') === tabName) {
+            btn.className = btn.className.replace('tab-inactive', 'tab-active');
+        } else {
+            btn.className = btn.className.replace('tab-active', 'tab-inactive');
+        }
     });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
+    
+    // 显示对应内容
+    elements.tabContents?.forEach(content => {
+        if (content.id === `${tabName}Tab`) {
+            content.classList.remove('hidden');
+        } else {
+            content.classList.add('hidden');
+        }
+    });
 }
 
-// 带重试的API请求
-async function fetchWithRetry(url, options, maxRetries = 2) {
-  for (let i = 0; i <= maxRetries; i++) {
-    try {
-      const response = await fetch(url, {
-        ...options,
-        timeout: 30000 // 30秒超时
-      });
-      return response;
-    } catch (error) {
-      if (i === maxRetries) {
-        throw error;
-      }
-      // 等待1秒后重试
-      await new Promise(resolve => setTimeout(resolve, 1000));
+// 更新字符计数
+function updateCharCount() {
+    if (elements.ideaInput && elements.charCount) {
+        const count = elements.ideaInput.value.length;
+        elements.charCount.textContent = `${count}/1000`;
+        
+        // 根据字符数改变颜色
+        if (count > 800) {
+            elements.charCount.className = 'absolute bottom-3 right-3 text-xs text-red-400';
+        } else if (count > 600) {
+            elements.charCount.className = 'absolute bottom-3 right-3 text-xs text-yellow-400';
+        } else {
+            elements.charCount.className = 'absolute bottom-3 right-3 text-xs text-gray-400';
+        }
     }
-  }
 }
 
-// 调用后端API执行想法
-async function executeIdea(idea) {
-  const API_BASE = 'http://localhost:3000/api';
-  
-  // 步骤1: 检查连接
-  updateLoadingStep(1, '检查服务连接...');
-  const isConnected = await checkBackendConnection();
-  if (!isConnected) {
-    throw new Error('无法连接到后端服务，请确保服务已启动');
-  }
-  
-  // 步骤2: 分析想法
-  updateLoadingStep(2, '分析想法中...');
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // 步骤3: 生成代码
-  updateLoadingStep(3, '生成代码中...');
-  
-  const response = await fetchWithRetry(`${API_BASE}/execute`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ 
-      idea,
-      language: 'python' // 默认使用Python
-    })
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`API请求失败 (${response.status}): ${errorText}`);
-  }
-  
-  const result = await response.json();
-  
-  if (!result.success) {
-    throw new Error(result.message || '执行失败');
-  }
-  
-  // 步骤4: 准备结果
-  updateLoadingStep(4, '准备结果...');
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // 保存执行ID用于后续操作
-  currentExecutionId = result.data.executionId;
-  
-  return result.data;
+// 设置执行模式
+function setMode(mode) {
+    currentMode = mode;
+    
+    if (mode === 'stepByStep') {
+        elements.stepByStepMode?.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
+        elements.stepByStepMode?.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-600');
+        elements.autoMode?.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
+        elements.autoMode?.classList.add('border-gray-200', 'bg-gray-50', 'text-gray-600');
+    } else {
+        elements.autoMode?.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
+        elements.autoMode?.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-600');
+        elements.stepByStepMode?.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
+        elements.stepByStepMode?.classList.add('border-gray-200', 'bg-gray-50', 'text-gray-600');
+    }
 }
 
 // 显示加载状态
-function showLoading() {
-  elements.loadingSection.style.display = 'block';
-  elements.resultsSection.style.display = 'none';
-  elements.executeBtn.disabled = true;
-  
-  // 重置步骤状态
-  document.querySelectorAll('.step').forEach(step => {
-    step.classList.remove('active', 'completed');
-  });
+function showLoading(message = '正在处理...') {
+    if (elements.loadingOverlay && elements.loadingText) {
+        elements.loadingText.textContent = message;
+        elements.loadingOverlay.classList.remove('hidden');
+    }
+    isProcessing = true;
 }
 
 // 隐藏加载状态
 function hideLoading() {
-  elements.loadingSection.style.display = 'none';
-  elements.executeBtn.disabled = false;
+    if (elements.loadingOverlay) {
+        elements.loadingOverlay.classList.add('hidden');
+    }
+    isProcessing = false;
 }
 
-// 更新加载步骤
-function updateLoadingStep(stepNumber, message) {
-  // 更新消息
-  if (elements.loadingMessage) {
-    elements.loadingMessage.textContent = message;
-  }
-  
-  // 更新步骤状态
-  const currentStep = document.getElementById(`step${stepNumber}`);
-  const prevSteps = document.querySelectorAll(`.step:nth-child(-n+${stepNumber - 1})`);
-  
-  // 标记之前的步骤为完成
-  prevSteps.forEach(step => {
-    step.classList.remove('active');
-    step.classList.add('completed');
-  });
-  
-  // 标记当前步骤为活跃
-  if (currentStep) {
-    currentStep.classList.add('active');
-    currentStep.classList.remove('completed');
-  }
+// 更新状态指示器
+function updateStatus(status, message) {
+    if (!elements.statusIndicator) return;
+    
+    const dot = elements.statusIndicator.querySelector('div');
+    const text = elements.statusIndicator.querySelector('span');
+    
+    if (dot && text) {
+        // 移除所有状态类
+        dot.className = 'w-2 h-2 rounded-full';
+        
+        switch (status) {
+            case 'ready':
+                dot.classList.add('bg-green-400', 'animate-pulse');
+                text.textContent = message || '就绪';
+                break;
+            case 'processing':
+                dot.classList.add('bg-yellow-400', 'animate-pulse');
+                text.textContent = message || '处理中';
+                break;
+            case 'error':
+                dot.classList.add('bg-red-400');
+                text.textContent = message || '错误';
+                break;
+            case 'success':
+                dot.classList.add('bg-blue-400');
+                text.textContent = message || '完成';
+                break;
+        }
+    }
+}
+
+// 处理分析请求
+async function handleAnalyze() {
+    if (isProcessing) return;
+    
+    const idea = elements.ideaInput?.value.trim();
+    if (!idea) {
+        showNotification('请输入您的项目想法', 'warning');
+        return;
+    }
+    
+    const complexity = elements.complexitySelect?.value || 'medium';
+    const language = elements.languageSelect?.value || 'javascript';
+    
+    try {
+        showLoading('正在分析您的想法...');
+        updateStatus('processing', '分析中');
+        
+        const response = await fetch('http://localhost:3000/api/ai/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idea,
+                complexity,
+                language
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            displayResults(result.data);
+            saveToHistory({
+                idea,
+                complexity,
+                language,
+                result: result.data,
+                timestamp: new Date().toISOString()
+            });
+            updateStatus('success', '分析完成');
+        } else {
+            throw new Error(result.error || '分析失败');
+        }
+        
+    } catch (error) {
+        console.error('Analysis error:', error);
+        showNotification(`分析失败: ${error.message}`, 'error');
+        updateStatus('error', '分析失败');
+    } finally {
+        hideLoading();
+    }
 }
 
 // 显示结果
-function showResults(result) {
-  elements.resultsSection.style.display = 'block';
-  elements.resultsSection.classList.add('fade-in');
-  
-  // 显示执行输出
-  if (elements.outputContent && result.result && result.result.output) {
-    elements.outputContent.innerHTML = formatOutput(result.result.output);
-  }
-  
-  // 显示生成的代码
-  if (elements.codeContent && result.code) {
-    elements.codeContent.textContent = result.code;
-  }
-  
-  // 显示执行日志（如果有错误信息）
-  if (elements.logsContent) {
-    const logs = [];
-    
-    // 添加AI解释
-    if (result.explanation) {
-      logs.push({ level: 'info', message: `AI解释: ${result.explanation}` });
+function displayResults(data) {
+    if (elements.resultsArea) {
+        elements.resultsArea.classList.remove('hidden');
     }
     
-    // 添加执行状态
-    if (result.result) {
-      const status = result.result.success ? '成功' : '失败';
-      const level = result.result.success ? 'success' : 'error';
-      logs.push({ level, message: `执行状态: ${status}` });
-      
-      // 添加执行时间
-      if (result.result.executionTime) {
-        logs.push({ level: 'info', message: `执行时间: ${result.result.executionTime}ms` });
-      }
-      
-      // 添加错误信息
-      if (result.result.error) {
-        logs.push({ level: 'error', message: `错误: ${result.result.error}` });
-      }
+    if (elements.outputContent) {
+        elements.outputContent.textContent = data.explanation || '分析完成';
     }
     
-    elements.logsContent.innerHTML = formatLogs(logs);
-  }
-  
-  // 保存当前执行ID
-  currentExecutionId = result.executionId;
+    if (elements.codeContent) {
+        elements.codeContent.textContent = data.code || '// 代码生成中...';
+    }
+    
+    // 启用操作按钮
+    if (elements.downloadBtn) {
+        elements.downloadBtn.disabled = false;
+    }
+    if (elements.continueBtn) {
+        elements.continueBtn.disabled = false;
+    }
+    
+    // 如果有MEU计划，切换到MEU标签页并显示
+    if (data.meuPlan) {
+        currentProject = {
+            id: generateProjectId(),
+            idea: elements.ideaInput?.value,
+            plan: data.meuPlan,
+            currentStep: 0,
+            status: 'ready'
+        };
+        
+        displayMEUProject(currentProject);
+        switchTab('meu');
+    }
 }
 
-// 格式化输出
-function formatOutput(output) {
-  if (typeof output === 'string') {
-    return `<div class="output-text">${escapeHtml(output)}</div>`;
-  }
-  
-  if (output.type === 'html') {
-    return `<iframe srcdoc="${escapeHtml(output.content)}" style="width: 100%; height: 200px; border: 1px solid #e2e8f0; border-radius: 4px;"></iframe>`;
-  }
-  
-  if (output.type === 'image') {
-    return `<img src="${output.url}" alt="Generated output" style="max-width: 100%; border-radius: 4px;" />`;
-  }
-  
-  return `<pre>${escapeHtml(JSON.stringify(output, null, 2))}</pre>`;
+// 显示MEU项目
+function displayMEUProject(project) {
+    if (!project || !project.plan) return;
+    
+    // 显示项目进度
+    if (elements.projectProgress) {
+        elements.projectProgress.classList.remove('hidden');
+    }
+    
+    updateProjectProgress(project);
+    renderStepsList(project);
+    
+    // 显示操作按钮
+    if (elements.meuActions) {
+        elements.meuActions.classList.remove('hidden');
+    }
 }
 
-// 格式化日志
-function formatLogs(logs) {
-  if (Array.isArray(logs)) {
-    return logs.map(log => {
-      const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
-      const level = log.level || 'info';
-      return `<div class="log-entry log-${level}">[${timestamp}] ${escapeHtml(log.message)}</div>`;
-    }).join('');
-  }
-  
-  return `<div class="log-entry">${escapeHtml(logs)}</div>`;
+// 更新项目进度
+function updateProjectProgress(project) {
+    if (!project || !project.plan) return;
+    
+    const totalSteps = project.plan.steps ? project.plan.steps.length : 0;
+    const completedSteps = project.plan.steps ? project.plan.steps.filter(step => step.status === 'completed').length : 0;
+    const progressPercentage = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+    
+    if (elements.progressText) {
+        elements.progressText.textContent = `${completedSteps}/${totalSteps}`;
+    }
+    
+    if (elements.progressBar) {
+        elements.progressBar.style.width = `${progressPercentage}%`;
+    }
 }
 
-// HTML转义
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+// 渲染步骤列表
+function renderStepsList(project) {
+    if (!elements.stepsList || !project.plan.steps) return;
+    
+    elements.stepsList.innerHTML = '';
+    
+    project.plan.steps.forEach((step, index) => {
+        const stepElement = createStepElement(step, index, project.currentStep === index);
+        elements.stepsList.appendChild(stepElement);
+    });
 }
 
-// 切换Tab
-function switchTab(tabName) {
-  // 更新按钮状态
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabName);
-  });
-  
-  // 更新内容显示
-  document.querySelectorAll('.tab-pane').forEach(pane => {
-    pane.classList.toggle('active', pane.id === `${tabName}Tab`);
-  });
+// 创建步骤元素
+function createStepElement(step, index, isCurrent) {
+    const div = document.createElement('div');
+    div.className = `bg-white rounded-xl border-2 p-4 transition-all duration-200 ${
+        isCurrent ? 'border-blue-500 shadow-lg' : 'border-gray-200'
+    }`;
+    
+    const statusIcon = getStatusIcon(step.status);
+    const statusColor = getStatusColor(step.status);
+    
+    div.innerHTML = `
+        <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${statusColor}">
+                ${statusIcon}
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-semibold text-gray-800 truncate">
+                        步骤 ${index + 1}: ${step.title || step.description}
+                    </h4>
+                    <span class="text-xs px-2 py-1 rounded-full ${
+                        step.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        step.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                        step.status === 'error' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-600'
+                    }">
+                        ${getStatusText(step.status)}
+                    </span>
+                </div>
+                <p class="text-sm text-gray-600 mt-1">${step.description}</p>
+                ${step.code ? `<pre class="text-xs bg-gray-50 p-2 rounded mt-2 overflow-x-auto"><code>${step.code}</code></pre>` : ''}
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+// 获取状态图标
+function getStatusIcon(status) {
+    switch (status) {
+        case 'completed':
+            return '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>';
+        case 'in_progress':
+            return '<svg class="w-4 h-4 text-white animate-spin" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"/></svg>';
+        case 'error':
+            return '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>';
+        default:
+            return `<span class="text-white text-xs font-bold">${getStepNumber(status)}</span>`;
+    }
+}
+
+// 获取状态颜色
+function getStatusColor(status) {
+    switch (status) {
+        case 'completed':
+            return 'bg-green-500';
+        case 'in_progress':
+            return 'bg-blue-500';
+        case 'error':
+            return 'bg-red-500';
+        default:
+            return 'bg-gray-400';
+    }
+}
+
+// 获取状态文本
+function getStatusText(status) {
+    switch (status) {
+        case 'completed':
+            return '已完成';
+        case 'in_progress':
+            return '进行中';
+        case 'error':
+            return '错误';
+        default:
+            return '待执行';
+    }
+}
+
+// 获取步骤编号
+function getStepNumber(status) {
+    // 这里可以根据实际需要返回步骤编号
+    return '•';
+}
+
+// 执行当前步骤
+async function executeCurrentStep() {
+    if (!currentProject || isProcessing) return;
+    
+    const currentStep = currentProject.plan.steps[currentProject.currentStep];
+    if (!currentStep) return;
+    
+    try {
+        showLoading(`正在执行步骤 ${currentProject.currentStep + 1}...`);
+        updateStatus('processing', '执行中');
+        
+        // 更新步骤状态为进行中
+        currentStep.status = 'in_progress';
+        renderStepsList(currentProject);
+        
+        const response = await fetch('http://localhost:3000/api/meu/execute-step', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                projectId: currentProject.id,
+                stepIndex: currentProject.currentStep
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // 更新步骤状态为完成
+            currentStep.status = 'completed';
+            if (result.data.code) {
+                currentStep.code = result.data.code;
+            }
+            
+            // 移动到下一步
+            currentProject.currentStep++;
+            
+            // 更新显示
+            updateProjectProgress(currentProject);
+            renderStepsList(currentProject);
+            
+            updateStatus('success', '步骤完成');
+            showNotification(`步骤 ${currentProject.currentStep} 执行完成`, 'success');
+            
+            // 如果是自动模式且还有下一步，继续执行
+            if (currentMode === 'auto' && currentProject.currentStep < currentProject.plan.steps.length) {
+                setTimeout(() => executeCurrentStep(), 1000);
+            }
+        } else {
+            throw new Error(result.error || '步骤执行失败');
+        }
+        
+    } catch (error) {
+        console.error('Step execution error:', error);
+        currentStep.status = 'error';
+        renderStepsList(currentProject);
+        showNotification(`步骤执行失败: ${error.message}`, 'error');
+        updateStatus('error', '执行失败');
+    } finally {
+        hideLoading();
+    }
+}
+
+// 修改当前步骤
+function modifyCurrentStep() {
+    if (!currentProject) return;
+    
+    const currentStep = currentProject.plan.steps[currentProject.currentStep];
+    if (!currentStep) return;
+    
+    // 这里可以实现步骤修改的逻辑
+    const newDescription = prompt('修改步骤描述:', currentStep.description);
+    if (newDescription && newDescription !== currentStep.description) {
+        currentStep.description = newDescription;
+        renderStepsList(currentProject);
+        showNotification('步骤已修改', 'success');
+    }
 }
 
 // 处理下载
 function handleDownload() {
-  if (!currentExecutionId) {
-    showNotification('没有可下载的内容', 'warning');
-    return;
-  }
-  
-  // 创建下载链接
-  const codeContent = elements.codeContent?.textContent;
-  if (codeContent) {
-    const blob = new Blob([codeContent], { type: 'text/plain' });
+    if (!elements.codeContent) return;
+    
+    const code = elements.codeContent.textContent;
+    if (!code || code === '// 代码生成中...') {
+        showNotification('没有可下载的代码', 'warning');
+        return;
+    }
+    
+    const language = elements.languageSelect?.value || 'javascript';
+    const extension = getFileExtension(language);
+    const filename = `generated_code.${extension}`;
+    
+    downloadFile(code, filename);
+    showNotification('代码已下载', 'success');
+}
+
+// 处理继续
+function handleContinue() {
+    // 切换到MEU标签页
+    switchTab('meu');
+    showNotification('已切换到MEU模式', 'info');
+}
+
+// 获取文件扩展名
+function getFileExtension(language) {
+    const extensions = {
+        javascript: 'js',
+        python: 'py',
+        java: 'java',
+        cpp: 'cpp',
+        html: 'html'
+    };
+    return extensions[language] || 'txt';
+}
+
+// 下载文件
+function downloadFile(content, filename) {
+    const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `idea-meu-${Date.now()}.txt`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
-    showNotification('代码已下载', 'success');
-  }
 }
 
-// 处理继续扩展
-function handleContinue() {
-  const currentIdea = elements.ideaInput?.value.trim();
-  if (currentIdea) {
-    elements.ideaInput.value = currentIdea + '\n\n请继续扩展这个功能：';
-    elements.ideaInput.focus();
-    elements.ideaInput.setSelectionRange(elements.ideaInput.value.length, elements.ideaInput.value.length);
-  }
-}
-
-// 更新状态
-function updateStatus(text, type = 'ready') {
-  if (elements.statusText) {
-    elements.statusText.textContent = text;
-  }
-  
-  const dot = elements.statusIndicator?.querySelector('.status-dot');
-  if (dot) {
-    dot.className = 'status-dot';
-    dot.classList.add(`status-${type}`);
-  }
+// 生成项目ID
+function generateProjectId() {
+    return 'project_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
 // 显示通知
 function showNotification(message, type = 'info') {
-  // 创建通知元素
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  
-  // 添加样式
-  Object.assign(notification.style, {
-    position: 'fixed',
-    top: '20px',
-    right: '20px',
-    padding: '12px 16px',
-    borderRadius: '8px',
-    color: 'white',
-    fontSize: '13px',
-    fontWeight: '500',
-    zIndex: '10000',
-    opacity: '0',
-    transform: 'translateX(100%)',
-    transition: 'all 0.3s ease'
-  });
-  
-  // 设置背景色
-  const colors = {
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    info: '#3b82f6'
-  };
-  notification.style.background = colors[type] || colors.info;
-  
-  document.body.appendChild(notification);
-  
-  // 显示动画
-  setTimeout(() => {
-    notification.style.opacity = '1';
-    notification.style.transform = 'translateX(0)';
-  }, 100);
-  
-  // 自动隐藏
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateX(100%)';
+    // 创建通知元素
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-x-full`;
+    
+    // 根据类型设置样式
+    switch (type) {
+        case 'success':
+            notification.classList.add('bg-green-500', 'text-white');
+            break;
+        case 'error':
+            notification.classList.add('bg-red-500', 'text-white');
+            break;
+        case 'warning':
+            notification.classList.add('bg-yellow-500', 'text-white');
+            break;
+        default:
+            notification.classList.add('bg-blue-500', 'text-white');
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // 显示动画
     setTimeout(() => {
-      document.body.removeChild(notification);
-    }, 300);
-  }, 3000);
-}
-
-// 显示错误
-function showError(message) {
-  elements.loadingSection.style.display = 'none';
-  elements.resultsSection.style.display = 'none';
-  
-  // 根据错误类型提供更友好的提示
-  let friendlyMessage = message;
-  
-  if (message.includes('Failed to fetch') || message.includes('网络错误')) {
-    friendlyMessage = '网络连接失败，请检查后端服务是否启动 (http://localhost:3000)';
-  } else if (message.includes('API请求失败 (404)')) {
-    friendlyMessage = 'API端点不存在，请检查后端服务配置';
-  } else if (message.includes('API请求失败 (500)')) {
-    friendlyMessage = '服务器内部错误，请查看后端日志';
-  } else if (message.includes('API请求失败 (429)')) {
-    friendlyMessage = '请求过于频繁，请稍后再试';
-  } else if (message.includes('AI服务')) {
-    friendlyMessage = 'AI服务暂时不可用，请稍后重试';
-  }
-  
-  showNotification(friendlyMessage, 'error');
-  updateStatus('错误', 'error');
-  
-  // 在控制台输出详细错误信息供调试
-  console.error('详细错误信息:', message);
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // 自动隐藏
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
 }
 
 // 保存到历史记录
-async function saveToHistory(idea) {
-  try {
-    const history = await getHistory();
-    const newItem = {
-      id: Date.now(),
-      text: idea,
-      timestamp: new Date().toISOString()
-    };
-    
-    history.unshift(newItem);
-    
-    // 限制历史记录数量
-    if (history.length > 10) {
-      history.splice(10);
+function saveToHistory(item) {
+    try {
+        const history = JSON.parse(localStorage.getItem('ideaToMeuHistory') || '[]');
+        history.unshift(item);
+        
+        // 限制历史记录数量
+        if (history.length > 50) {
+            history.splice(50);
+        }
+        
+        localStorage.setItem('ideaToMeuHistory', JSON.stringify(history));
+        loadHistory();
+    } catch (error) {
+        console.error('Failed to save history:', error);
     }
-    
-    await chrome.storage.local.set({ history });
-    loadHistory();
-  } catch (error) {
-    console.error('保存历史记录失败:', error);
-  }
-}
-
-// 获取历史记录
-async function getHistory() {
-  try {
-    const result = await chrome.storage.local.get(['history']);
-    return result.history || [];
-  } catch (error) {
-    console.error('获取历史记录失败:', error);
-    return [];
-  }
 }
 
 // 加载历史记录
-async function loadHistory() {
-  try {
-    const history = await getHistory();
-    
+function loadHistory() {
     if (!elements.historyList) return;
     
-    if (history.length === 0) {
-      elements.historyList.innerHTML = '<div class="history-empty">暂无历史记录</div>';
-      return;
+    try {
+        const history = JSON.parse(localStorage.getItem('ideaToMeuHistory') || '[]');
+        
+        if (history.length === 0) {
+            elements.historyList.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-sm">暂无历史记录</p>
+                </div>
+            `;
+            return;
+        }
+        
+        elements.historyList.innerHTML = '';
+        
+        history.forEach((item, index) => {
+            const historyItem = createHistoryItem(item, index);
+            elements.historyList.appendChild(historyItem);
+        });
+        
+    } catch (error) {
+        console.error('Failed to load history:', error);
     }
+}
+
+// 创建历史记录项
+function createHistoryItem(item, index) {
+    const div = document.createElement('div');
+    div.className = 'bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 cursor-pointer';
     
-    elements.historyList.innerHTML = history.map(item => {
-      const time = new Date(item.timestamp).toLocaleString();
-      return `
-        <div class="history-item" data-id="${item.id}">
-          <div class="history-item-text">${escapeHtml(item.text)}</div>
-          <div class="history-item-time">${time}</div>
+    const date = new Date(item.timestamp).toLocaleString('zh-CN');
+    
+    div.innerHTML = `
+        <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-semibold text-gray-800 truncate">${item.idea}</h4>
+                <div class="flex items-center space-x-2 mt-1">
+                    <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">${item.language}</span>
+                    <span class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">${item.complexity}</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">${date}</p>
+            </div>
+            <button class="text-gray-400 hover:text-red-500 transition-colors duration-200" onclick="removeHistoryItem(${index})">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
         </div>
-      `;
-    }).join('');
+    `;
     
-    // 绑定点击事件
-    elements.historyList.querySelectorAll('.history-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const text = item.querySelector('.history-item-text').textContent;
-        elements.ideaInput.value = text;
-        elements.ideaInput.focus();
-      });
+    div.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        loadHistoryItem(item);
     });
     
-  } catch (error) {
-    console.error('加载历史记录失败:', error);
-  }
+    return div;
+}
+
+// 加载历史记录项
+function loadHistoryItem(item) {
+    if (elements.ideaInput) {
+        elements.ideaInput.value = item.idea;
+        updateCharCount();
+    }
+    
+    if (elements.complexitySelect) {
+        elements.complexitySelect.value = item.complexity;
+    }
+    
+    if (elements.languageSelect) {
+        elements.languageSelect.value = item.language;
+    }
+    
+    if (item.result) {
+        displayResults(item.result);
+    }
+    
+    // 切换到输入标签页
+    switchTab('input');
+    showNotification('历史记录已加载', 'success');
+}
+
+// 删除历史记录项
+function removeHistoryItem(index) {
+    try {
+        const history = JSON.parse(localStorage.getItem('ideaToMeuHistory') || '[]');
+        history.splice(index, 1);
+        localStorage.setItem('ideaToMeuHistory', JSON.stringify(history));
+        loadHistory();
+        showNotification('历史记录已删除', 'success');
+    } catch (error) {
+        console.error('Failed to remove history item:', error);
+    }
 }
 
 // 清空历史记录
-async function handleClearHistory() {
-  try {
-    await chrome.storage.local.remove(['history']);
-    loadHistory();
-    showNotification('历史记录已清空', 'success');
-  } catch (error) {
-    console.error('清空历史记录失败:', error);
-    showNotification('清空失败', 'error');
-  }
+function clearHistory() {
+    if (confirm('确定要清空所有历史记录吗？')) {
+        localStorage.removeItem('ideaToMeuHistory');
+        loadHistory();
+        showNotification('历史记录已清空', 'success');
+    }
 }
 
-// MEU功能实现
-function initMEUFeatures() {
-  let currentProject = null;
-  let currentMode = 'simple';
-  const API_BASE_URL = 'http://localhost:3000';
-  
-  // 模式切换
-  document.querySelectorAll('input[name="mode"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      currentMode = e.target.value;
-      const meuProject = document.getElementById('meuProject');
-      if (currentMode === 'meu') {
-        meuProject.style.display = 'block';
-      } else {
-        meuProject.style.display = 'none';
-      }
-    });
-  });
-  
-  // MEU按钮事件
-  document.getElementById('meuContinueBtn')?.addEventListener('click', () => {
-    if (currentProject) {
-      executeNextStep();
-    }
-  });
-  
-  document.getElementById('meuAutoBtn')?.addEventListener('click', () => {
-    if (currentProject) {
-      autoExecuteSteps();
-    }
-  });
-  
-  document.getElementById('meuResetBtn')?.addEventListener('click', () => {
-    resetMEUProject();
-  });
-  
-  // 创建MEU项目
-  async function createMEUProject(idea) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/meu/analyze`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ idea })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create MEU project');
-      }
-      
-      const result = await response.json();
-      currentProject = result;
-      displayMEUProject(result);
-      return result;
-    } catch (error) {
-      console.error('Error creating MEU project:', error);
-      showError('创建MEU项目失败: ' + error.message);
-      return null;
-    }
-  }
-  
-  // 显示MEU项目
-  function displayMEUProject(project) {
-    const titleEl = document.getElementById('meuTitle');
-    const stepsEl = document.getElementById('meuSteps');
-    const progressEl = document.getElementById('meuProgressBar');
-    const progressTextEl = document.getElementById('meuProgressText');
-    
-    if (titleEl) titleEl.textContent = project.title || 'MEU项目';
-    
-    // 显示步骤
-    if (stepsEl && project.steps) {
-      stepsEl.innerHTML = '';
-      project.steps.forEach((step, index) => {
-        const stepEl = createStepElement(step, index);
-        stepsEl.appendChild(stepEl);
-      });
-    }
-    
-    // 更新进度
-    updateProgress(project);
-    
-    // 显示项目容器
-    const meuProject = document.getElementById('meuProject');
-    if (meuProject) {
-      meuProject.style.display = 'block';
-    }
-  }
-  
-  // 创建步骤元素
-  function createStepElement(step, index) {
-    const stepEl = document.createElement('div');
-    stepEl.className = `meu-step ${step.status || 'pending'}`;
-    stepEl.innerHTML = `
-      <div class="step-status ${step.status || 'pending'}">
-        ${step.status === 'completed' ? '✓' : step.status === 'current' ? '▶' : (index + 1)}
-      </div>
-      <div class="step-content">
-        <div class="step-title">${step.title}</div>
-        <div class="step-description">${step.description}</div>
-      </div>
-    `;
-    return stepEl;
-  }
-  
-  // 更新进度
-  function updateProgress(project) {
-    if (!project.steps) return;
-    
-    const completed = project.steps.filter(s => s.status === 'completed').length;
-    const total = project.steps.length;
-    const percentage = total > 0 ? (completed / total) * 100 : 0;
-    
-    const progressEl = document.getElementById('meuProgressBar');
-    const progressTextEl = document.getElementById('meuProgressText');
-    
-    if (progressEl) {
-      progressEl.style.width = `${percentage}%`;
-    }
-    
-    if (progressTextEl) {
-      progressTextEl.textContent = `${completed}/${total} 步骤完成`;
-    }
-  }
-  
-  // 执行下一步
-  async function executeNextStep() {
-    if (!currentProject) return;
-    
-    const nextStep = currentProject.steps.find(s => s.status === 'pending');
-    if (!nextStep) {
-      showNotification('所有步骤已完成！', 'success');
-      return;
-    }
-    
-    try {
-      // 标记当前步骤
-      nextStep.status = 'current';
-      displayMEUProject(currentProject);
-      
-      const response = await fetch(`${API_BASE_URL}/api/meu/execute-step`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          projectId: currentProject.id,
-          stepIndex: currentProject.steps.indexOf(nextStep)
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to execute step');
-      }
-      
-      const result = await response.json();
-      
-      // 更新步骤状态
-      nextStep.status = 'completed';
-      nextStep.result = result;
-      
-      displayMEUProject(currentProject);
-      showNotification(`步骤 "${nextStep.title}" 执行完成`, 'success');
-      
-    } catch (error) {
-      console.error('Error executing step:', error);
-      nextStep.status = 'pending';
-      displayMEUProject(currentProject);
-      showError('执行步骤失败: ' + error.message);
-    }
-  }
-  
-  // 自动执行所有步骤
-  async function autoExecuteSteps() {
-    if (!currentProject) return;
-    
-    const pendingSteps = currentProject.steps.filter(s => s.status === 'pending');
-    
-    for (const step of pendingSteps) {
-      await executeNextStep();
-      // 添加延迟避免过快执行
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-  }
-  
-  // 重置MEU项目
-  function resetMEUProject() {
-    currentProject = null;
-    const meuProject = document.getElementById('meuProject');
-    if (meuProject) {
-      meuProject.style.display = 'none';
-    }
-    
-    // 重置模式选择
-    const simpleMode = document.querySelector('input[value="simple"]');
-    if (simpleMode) {
-      simpleMode.checked = true;
-      currentMode = 'simple';
-    }
-  }
-  
-  // 扩展原有的执行函数以支持MEU模式
-  const originalHandleExecute = handleExecute;
-  window.handleExecute = async function() {
-    const idea = elements.ideaInput?.value.trim();
-    
-    if (currentMode === 'meu') {
-      // 输入验证
-      const validation = validateInput(idea);
-      if (!validation.valid) {
-        showNotification(validation.message, 'warning');
-        elements.ideaInput?.focus();
-        return;
-      }
-      
-      if (isExecuting) {
-        showNotification('正在执行中，请稍候', 'info');
-        return;
-      }
-      
-      try {
-        isExecuting = true;
-        updateStatus('分析中', 'executing');
-        
-        // 切换到MEU标签页
-        const meuTab = document.querySelector('[data-tab="meu"]');
-        if (meuTab) {
-          meuTab.click();
+// 处理键盘快捷键
+function handleKeyboardShortcuts(event) {
+    // Ctrl/Cmd + Enter: 执行分析
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if (!isProcessing) {
+            handleAnalyze();
         }
-        
-        // 创建MEU项目
-        await createMEUProject(idea);
-        
-        // 保存到历史记录
-        await saveToHistory(idea);
-        
-        updateStatus('就绪', 'ready');
-        showNotification('MEU项目创建完成', 'success');
-        
-        // 清空输入框
-        elements.ideaInput.value = '';
-        
-      } catch (error) {
-        console.error('MEU执行失败:', error);
-        showError(error.message || 'MEU执行失败，请重试');
-        updateStatus('错误', 'error');
-      } finally {
-        isExecuting = false;
-      }
-    } else {
-      // 使用原有的简单模式
-      return originalHandleExecute();
     }
-  };
+    
+    // Ctrl/Cmd + K: 聚焦输入框
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        elements.ideaInput?.focus();
+    }
+    
+    // Esc: 清空输入
+    if (event.key === 'Escape') {
+        if (elements.ideaInput) {
+            elements.ideaInput.value = '';
+            updateCharCount();
+        }
+    }
 }
 
-// 添加CSS样式到状态点
-const style = document.createElement('style');
-style.textContent = `
-  .status-ready { background: #10b981; }
-  .status-executing { background: #f59e0b; }
-  .status-completed { background: #3b82f6; }
-  .status-error { background: #ef4444; }
+// 页面加载完成后初始化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
-  .history-empty {
-    text-align: center;
-    color: #9ca3af;
-    font-size: 12px;
-    padding: 16px;
-  }
-  
-  .log-entry {
-    margin-bottom: 4px;
-    font-family: inherit;
-  }
-  
-  .log-info { color: #94a3b8; }
-  .log-warn { color: #fbbf24; }
-  .log-error { color: #f87171; }
-  .log-success { color: #34d399; }
-  
-  .char-counter {
-    position: absolute;
-    right: 8px;
-    bottom: 8px;
-    font-size: 11px;
-    color: #9ca3af;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 2px 6px;
-    border-radius: 4px;
-    pointer-events: none;
-  }
-  
-  .char-counter.warning {
-    color: #f59e0b;
-    font-weight: 500;
-  }
-  
-  .input-container {
-    position: relative;
-  }
-  
-  .help-text {
-    margin-top: 8px;
-    text-align: center;
-    opacity: 0.7;
-  }
-  
-  .help-text small {
-    color: #6b7280;
-    font-size: 11px;
-  }
-  
-  /* MEU样式 */
-  .meu-container {
-    padding: 16px;
-  }
-  
-  .meu-mode-selector {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 16px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 8px;
-  }
-  
-  .meu-mode-selector label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  
-  .meu-project {
-    border: 1px solid #e1e5e9;
-    border-radius: 8px;
-    padding: 16px;
-    background: white;
-  }
-  
-  .meu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e1e5e9;
-  }
-  
-  .meu-progress {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  .progress-bar {
-    width: 120px;
-    height: 6px;
-    background: #e1e5e9;
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4CAF50, #45a049);
-    transition: width 0.3s ease;
-    width: 0%;
-  }
-  
-  .meu-steps {
-    margin-bottom: 16px;
-  }
-  
-  .meu-step {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    margin-bottom: 8px;
-    border: 1px solid #e1e5e9;
-    border-radius: 6px;
-    background: white;
-    transition: all 0.2s ease;
-  }
-  
-  .meu-step.completed {
-    background: #f0f9f0;
-    border-color: #4CAF50;
-  }
-  
-  .meu-step.current {
-    background: #fff3cd;
-    border-color: #ffc107;
-  }
-  
-  .meu-step.pending {
-    background: #f8f9fa;
-    border-color: #e1e5e9;
-  }
-  
-  .step-status {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-  }
-  
-  .step-status.completed {
-    background: #4CAF50;
-    color: white;
-  }
-  
-  .step-status.current {
-    background: #ffc107;
-    color: white;
-  }
-  
-  .step-status.pending {
-    background: #e1e5e9;
-    color: #666;
-  }
-  
-  .step-content {
-    flex: 1;
-  }
-  
-  .step-title {
-    font-weight: 500;
-    margin-bottom: 4px;
-  }
-  
-  .step-description {
-    font-size: 12px;
-    color: #666;
-  }
-  
-  .meu-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-  }
-  
-  .btn-danger {
-    background: #dc3545;
-    color: white;
-    border: 1px solid #dc3545;
-  }
-  
-  .btn-danger:hover {
-    background: #c82333;
-    border-color: #bd2130;
-  }
-`;
-document.head.appendChild(style);
+// 导出函数供全局使用
+window.removeHistoryItem = removeHistoryItem;
