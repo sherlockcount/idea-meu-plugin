@@ -31,6 +31,8 @@ const executeCode = async (code, language, executionId, projectId, stepId) => {
     const projectDir = process.env.DOCKER_EXECUTION === 'true'
       ? path.join('/app', 'projects', projectId)
       : path.join(__dirname, '../projects', projectId);
+    
+    logger.info('创建项目目录', { projectDir, projectId, stepId });
     await fs.mkdir(projectDir, { recursive: true });
     
     // 写入代码文件
@@ -38,6 +40,8 @@ const executeCode = async (code, language, executionId, projectId, stepId) => {
     const codeFileName = `step_${stepId}.${fileExtension}`;
     const codeFilePath = path.join(projectDir, codeFileName);
     await fs.writeFile(codeFilePath, code, 'utf8');
+    
+    logger.info('代码文件已写入', { codeFilePath, codeFileName });
     
     // 创建执行容器
     containerName = await dockerService.createExecutionContainer(projectId, stepId);

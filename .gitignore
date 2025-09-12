@@ -184,12 +184,32 @@ config/local.json
 projects/*/meu_plan.json
 projects/meu_*/
 
-# Generated execution files
+# Generated execution files and project artifacts
 projects/*/step_*.*
+projects/*/*_error.txt
+projects/*/*_output.txt
+projects/*/*_status.json
 projects/*/*.txt
 projects/*/*.json
 projects/*/output/
 projects/*/temp/
+projects/*/logs/
+projects/*/cache/
+
+# Backend project artifacts
+backend/projects/*_*_error.txt
+backend/projects/*_*_output.txt
+backend/projects/*_*_status.json
+backend/projects/*/*_error.txt
+backend/projects/*/*_output.txt
+backend/projects/*/*_status.json
+backend/projects/*/step_*.*
+backend/projects/*/*.txt
+backend/projects/*/*.json
+backend/projects/*/output/
+backend/projects/*/temp/
+backend/projects/*/logs/
+backend/projects/*/cache/
 
 # Additional file types to exclude
 # Compiled files

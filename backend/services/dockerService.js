@@ -136,7 +136,7 @@ class DockerService {
         const containerName = `${this.containerPrefix}-${projectId}-${stepId}-${Date.now()}`;
         const projectPath = process.env.DOCKER_EXECUTION === 'true'
             ? path.join('/app', 'projects', projectId)
-            : path.join(__dirname, '../../projects', projectId);
+            : path.join(__dirname, '../projects', projectId);
         
         try {
             // 确保安全策略已加载
@@ -146,8 +146,14 @@ class DockerService {
             
             const policy = securityPolicy;
             
-            // 检查项目目录是否存在
-            await fs.access(projectPath);
+            // 确保项目目录存在
+            try {
+                await fs.access(projectPath);
+                logger.info('项目目录已存在', { projectPath });
+            } catch (error) {
+                logger.info('项目目录不存在，正在创建', { projectPath });
+                await fs.mkdir(projectPath, { recursive: true });
+            }
             
             const dockerArgs = [
                 'run',
@@ -173,7 +179,7 @@ class DockerService {
                 '--ulimit', 'nofile=1024:2048',
                 // 挂载目录
                 '-v', `${projectPath}:/workspace/projects/${projectId}:ro`,
-                '-v', `${path.join(__dirname, '../../projects')}:/workspace/output`,
+                '-v', `${path.join(__dirname, '../projects')}:/workspace/output`,
                 '-w', '/workspace',
                 '-d',
                 this.executionImage,
@@ -250,9 +256,9 @@ class DockerService {
             const executionTime = Date.now() - startTime;
             
             // 读取执行结果
-            const outputPath = path.join(__dirname, '../../projects', `${projectId}_${stepId}_output.txt`);
-            const errorPath = path.join(__dirname, '../../projects', `${projectId}_${stepId}_error.txt`);
-            const statusPath = path.join(__dirname, '../../projects', `${projectId}_${stepId}_status.json`);
+            const outputPath = path.join(__dirname, '../projects', `${projectId}_${stepId}_output.txt`);
+            const errorPath = path.join(__dirname, '../projects', `${projectId}_${stepId}_error.txt`);
+            const statusPath = path.join(__dirname, '../projects', `${projectId}_${stepId}_status.json`);
 
             const executionResult = {
                 output: '',

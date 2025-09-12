@@ -21,15 +21,25 @@ class AIService {
   async generateCode(idea, language) {
     try {
       if (!this.apiKey) {
+        logger.warn('DeepSeek API密钥未配置，使用模拟模式');
         return this.getMockResponse(idea, language);
       }
 
       const prompt = this.buildPrompt(idea, language);
+      logger.info('开始调用DeepSeek API', { idea: idea.substring(0, 50), language });
       const response = await this.callDeepSeekAPI(prompt);
+      logger.info('DeepSeek API调用成功');
       
       return this.parseResponse(response, idea, language);
     } catch (error) {
-      logger.error('AI代码生成失败', { error: error.message, idea, language });
+      logger.error('AI代码生成失败', { 
+        error: error.message, 
+        code: error.code,
+        response: error.response?.data,
+        status: error.response?.status,
+        idea: idea.substring(0, 50), 
+        language 
+      });
       
       // 如果API调用失败，回退到模拟模式
       logger.warn('回退到模拟模式');
@@ -101,7 +111,10 @@ class AIService {
         'Content-Type': 'application/json'
       },
       data: requestData,
-      timeout: 30000
+      timeout: 60000, // 增加到60秒
+      validateStatus: function (status) {
+        return status < 500; // 接受所有小于500的状态码
+      }
     };
 
     logger.debug('调用DeepSeek API', { 
