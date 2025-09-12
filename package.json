@@ -1,5 +1,26 @@
 {
+  "name": "idea-to-meu-frontend",
+  "version": "1.0.0",
+  "description": "Idea to MEU - 智能项目构建助手前端",
+  "main": "app.js",
+  "scripts": {
+    "dev": "python3 -m http.server 3001",
+    "build-css": "tailwindcss -i ./styles.css -o ./dist/styles.css --watch",
+    "build": "tailwindcss -i ./styles.css -o ./dist/styles.css --minify",
+    "serve": "python3 -m http.server 3001"
+  },
+  "keywords": [
+    "ai",
+    "code-generation",
+    "meu",
+    "project-builder"
+  ],
+  "author": "Idea to MEU Team",
+  "license": "MIT",
   "dependencies": {
     "axios": "^1.12.1"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
   }
 }
