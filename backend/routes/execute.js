@@ -5,6 +5,7 @@ const { aiRateLimit, executionRateLimit } = require('../middleware/rateLimiter')
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
 const aiService = require('../services/aiService');
+const databaseManager = require('../config/database');
 
 // 应用执行速率限制
 router.use(executionRateLimit);
@@ -139,8 +140,22 @@ router.post('/', executionRateLimit, asyncHandler(async (req, res) => {
       aiMetadata: codeGeneration.metadata
     };
     
-    // 存储到缓存（生产环境应存储到数据库）
+    // 存储到缓存
     executionCache.set(executionId, executionRecord);
+    
+    // 保存到数据库
+    try {
+      const db = databaseManager.getDatabase();
+      const collection = db.collection('executions');
+      await collection.insertOne({
+        ...executionRecord,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      logger.info('执行记录已保存到数据库', { executionId });
+    } catch (dbError) {
+      logger.warn('保存执行记录到数据库失败', { executionId, error: dbError.message });
+    }
     
     logger.logExecution({
       id: executionId,

@@ -15,6 +15,7 @@ const { generalRateLimit } = require('./middleware/rateLimiter');
 const apiRoutes = require('./routes/api');
 const executeRoutes = require('./routes/execute');
 const healthRoutes = require('./routes/health');
+const historyRoutes = require('./routes/history');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +61,7 @@ app.use('/health', healthRoutes);
 // API路由
 app.use('/api', apiRoutes);
 app.use('/api/execute', executeRoutes);
+app.use('/api/history', historyRoutes);
 
 // 根路由
 app.get('/', (req, res) => {

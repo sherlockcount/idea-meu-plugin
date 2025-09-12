@@ -130,6 +130,14 @@ async function initializeDatabase() {
     }
 }
 
+// 获取数据库实例（用于原生MongoDB操作）
+function getDatabase() {
+    if (!isConnected || !mongoose.connection.db) {
+        throw new Error('数据库未连接');
+    }
+    return mongoose.connection.db;
+}
+
 module.exports = {
     config,
     getDatabaseConfig,
@@ -137,5 +145,6 @@ module.exports = {
     disconnectMongoDB,
     getConnectionStatus,
     initializeDatabase,
+    getDatabase,
     isConnected: () => isConnected
 };

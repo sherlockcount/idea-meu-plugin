@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idea → MEU 插件测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .instructions {
+            padding: 20px;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .instructions h3 {
+            margin: 0 0 10px 0;
+            color: #334155;
+        }
+        .instructions p {
+            margin: 5px 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Idea → MEU 插件测试</h1>
+            <p>测试浏览器插件的完整功能</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>测试说明：</h3>
+            <p>• 确保后端服务已启动 (http://localhost:3000)</p>
+            <p>• 在输入框中输入你的想法</p>
+            <p>• 点击执行按钮测试完整流程</p>
+            <p>• 查看代码生成、执行结果和历史记录</p>
+        </div>
+        
+        <iframe src="popup.html"></iframe>
+    </div>
+</body>
+</html>

@@ -75,21 +75,97 @@ function bindEvents() {
     });
   });
   
-  // 输入框回车键
+  // 输入框键盘事件
   elements.ideaInput?.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + Enter 执行
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleExecute();
     }
+    
+    // Escape 清空输入
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      elements.ideaInput.value = '';
+      elements.ideaInput.blur();
+    }
   });
+  
+  // 输入框实时字符计数
+  elements.ideaInput?.addEventListener('input', (e) => {
+    const length = e.target.value.length;
+    const maxLength = 500;
+    
+    // 更新字符计数显示
+    let counter = document.getElementById('char-counter');
+    if (!counter) {
+      counter = document.createElement('div');
+      counter.id = 'char-counter';
+      counter.className = 'char-counter';
+      elements.ideaInput.parentNode.appendChild(counter);
+    }
+    
+    counter.textContent = `${length}/${maxLength}`;
+    counter.className = `char-counter ${length > maxLength * 0.9 ? 'warning' : ''}`;
+  });
+  
+  // 全局键盘快捷键
+  document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + K 聚焦输入框
+    if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      elements.ideaInput?.focus();
+    }
+    
+    // Ctrl/Cmd + H 切换到历史标签
+    if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      switchTab('history');
+    }
+    
+    // Ctrl/Cmd + R 切换到结果标签
+    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      switchTab('results');
+    }
+  });
+}
+
+// 验证用户输入
+function validateInput(idea) {
+  if (!idea || idea.length < 3) {
+    return { valid: false, message: '请输入至少3个字符的想法描述' };
+  }
+  
+  if (idea.length > 500) {
+    return { valid: false, message: '想法描述不能超过500个字符' };
+  }
+  
+  // 检查是否包含恶意内容
+  const maliciousPatterns = [
+    /rm\s+-rf/i,
+    /del\s+\/[sq]/i,
+    /format\s+c:/i,
+    /__import__\s*\(\s*['"]os['"]\s*\)/i
+  ];
+  
+  for (const pattern of maliciousPatterns) {
+    if (pattern.test(idea)) {
+      return { valid: false, message: '输入内容包含不安全的命令，请重新输入' };
+    }
+  }
+  
+  return { valid: true };
 }
 
 // 处理执行
 async function handleExecute() {
   const idea = elements.ideaInput?.value.trim();
   
-  if (!idea) {
-    showNotification('请输入你的想法', 'warning');
+  // 输入验证
+  const validation = validateInput(idea);
+  if (!validation.valid) {
+    showNotification(validation.message, 'warning');
     elements.ideaInput?.focus();
     return;
   }
@@ -104,6 +180,9 @@ async function handleExecute() {
     showLoading();
     updateStatus('执行中', 'executing');
     
+    // 显示执行开始通知
+    showNotification('开始执行你的想法...', 'info');
+    
     // 保存到历史记录
     await saveToHistory(idea);
     
@@ -113,6 +192,12 @@ async function handleExecute() {
     // 显示结果
     showResults(result);
     updateStatus('完成', 'completed');
+    
+    // 显示成功通知
+    showNotification('执行完成！', 'success');
+    
+    // 清空输入框
+    elements.ideaInput.value = '';
     
   } catch (error) {
     console.error('执行失败:', error);
@@ -124,38 +209,87 @@ async function handleExecute() {
   }
 }
 
+// 检查后端服务连接
+async function checkBackendConnection() {
+  const API_BASE = 'http://localhost:3000';
+  try {
+    const response = await fetch(`${API_BASE}/health`, {
+      method: 'GET',
+      timeout: 5000
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+// 带重试的API请求
+async function fetchWithRetry(url, options, maxRetries = 2) {
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        timeout: 30000 // 30秒超时
+      });
+      return response;
+    } catch (error) {
+      if (i === maxRetries) {
+        throw error;
+      }
+      // 等待1秒后重试
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+}
+
 // 调用后端API执行想法
 async function executeIdea(idea) {
   const API_BASE = 'http://localhost:3000/api';
   
-  // 模拟步骤进度
-  updateLoadingStep(1, '分析想法中...');
+  // 步骤1: 检查连接
+  updateLoadingStep(1, '检查服务连接...');
+  const isConnected = await checkBackendConnection();
+  if (!isConnected) {
+    throw new Error('无法连接到后端服务，请确保服务已启动');
+  }
   
-  const response = await fetch(`${API_BASE}/execute`, {
+  // 步骤2: 分析想法
+  updateLoadingStep(2, '分析想法中...');
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // 步骤3: 生成代码
+  updateLoadingStep(3, '生成代码中...');
+  
+  const response = await fetchWithRetry(`${API_BASE}/execute`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ idea })
+    body: JSON.stringify({ 
+      idea,
+      language: 'python' // 默认使用Python
+    })
   });
   
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`API请求失败 (${response.status}): ${errorText}`);
   }
   
   const result = await response.json();
   
-  // 模拟步骤进度
-  updateLoadingStep(2, '生成代码中...');
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  if (!result.success) {
+    throw new Error(result.message || '执行失败');
+  }
   
-  updateLoadingStep(3, '执行测试中...');
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
+  // 步骤4: 准备结果
   updateLoadingStep(4, '准备结果...');
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  return result;
+  // 保存执行ID用于后续操作
+  currentExecutionId = result.data.executionId;
+  
+  return result.data;
 }
 
 // 显示加载状态
@@ -205,19 +339,43 @@ function showResults(result) {
   elements.resultsSection.style.display = 'block';
   elements.resultsSection.classList.add('fade-in');
   
-  // 显示输出
-  if (elements.outputContent && result.output) {
-    elements.outputContent.innerHTML = formatOutput(result.output);
+  // 显示执行输出
+  if (elements.outputContent && result.result && result.result.output) {
+    elements.outputContent.innerHTML = formatOutput(result.result.output);
   }
   
-  // 显示代码
+  // 显示生成的代码
   if (elements.codeContent && result.code) {
     elements.codeContent.textContent = result.code;
   }
   
-  // 显示日志
-  if (elements.logsContent && result.logs) {
-    elements.logsContent.innerHTML = formatLogs(result.logs);
+  // 显示执行日志（如果有错误信息）
+  if (elements.logsContent) {
+    const logs = [];
+    
+    // 添加AI解释
+    if (result.explanation) {
+      logs.push({ level: 'info', message: `AI解释: ${result.explanation}` });
+    }
+    
+    // 添加执行状态
+    if (result.result) {
+      const status = result.result.success ? '成功' : '失败';
+      const level = result.result.success ? 'success' : 'error';
+      logs.push({ level, message: `执行状态: ${status}` });
+      
+      // 添加执行时间
+      if (result.result.executionTime) {
+        logs.push({ level: 'info', message: `执行时间: ${result.result.executionTime}ms` });
+      }
+      
+      // 添加错误信息
+      if (result.result.error) {
+        logs.push({ level: 'error', message: `错误: ${result.result.error}` });
+      }
+    }
+    
+    elements.logsContent.innerHTML = formatLogs(logs);
   }
   
   // 保存当前执行ID
@@ -245,7 +403,7 @@ function formatOutput(output) {
 function formatLogs(logs) {
   if (Array.isArray(logs)) {
     return logs.map(log => {
-      const timestamp = new Date(log.timestamp).toLocaleTimeString();
+      const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
       const level = log.level || 'info';
       return `<div class="log-entry log-${level}">[${timestamp}] ${escapeHtml(log.message)}</div>`;
     }).join('');
@@ -375,7 +533,27 @@ function showNotification(message, type = 'info') {
 function showError(message) {
   elements.loadingSection.style.display = 'none';
   elements.resultsSection.style.display = 'none';
-  showNotification(message, 'error');
+  
+  // 根据错误类型提供更友好的提示
+  let friendlyMessage = message;
+  
+  if (message.includes('Failed to fetch') || message.includes('网络错误')) {
+    friendlyMessage = '网络连接失败，请检查后端服务是否启动 (http://localhost:3000)';
+  } else if (message.includes('API请求失败 (404)')) {
+    friendlyMessage = 'API端点不存在，请检查后端服务配置';
+  } else if (message.includes('API请求失败 (500)')) {
+    friendlyMessage = '服务器内部错误，请查看后端日志';
+  } else if (message.includes('API请求失败 (429)')) {
+    friendlyMessage = '请求过于频繁，请稍后再试';
+  } else if (message.includes('AI服务')) {
+    friendlyMessage = 'AI服务暂时不可用，请稍后重试';
+  }
+  
+  showNotification(friendlyMessage, 'error');
+  updateStatus('错误', 'error');
+  
+  // 在控制台输出详细错误信息供调试
+  console.error('详细错误信息:', message);
 }
 
 // 保存到历史记录
@@ -468,7 +646,7 @@ style.textContent = `
   .status-executing { background: #f59e0b; }
   .status-completed { background: #3b82f6; }
   .status-error { background: #ef4444; }
-  
+
   .history-empty {
     text-align: center;
     color: #9ca3af;
@@ -485,5 +663,37 @@ style.textContent = `
   .log-warn { color: #fbbf24; }
   .log-error { color: #f87171; }
   .log-success { color: #34d399; }
+  
+  .char-counter {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    font-size: 11px;
+    color: #9ca3af;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  
+  .char-counter.warning {
+    color: #f59e0b;
+    font-weight: 500;
+  }
+  
+  .input-container {
+    position: relative;
+  }
+  
+  .help-text {
+    margin-top: 8px;
+    text-align: center;
+    opacity: 0.7;
+  }
+  
+  .help-text small {
+    color: #6b7280;
+    font-size: 11px;
+  }
 `;
 document.head.appendChild(style);
