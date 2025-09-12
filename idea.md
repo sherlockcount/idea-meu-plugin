@@ -62,7 +62,7 @@
 - **后端**：Node.js + Express / FastAPI (Python)  
 - **AI 模型**：OpenAI GPT-4/5 API / 本地模型 (Llama, vLLM)  
 - **执行环境**：Docker / Firecracker VM  
-- **数据库**：MongoDB（初期） → PostgreSQL（进阶）  
+- **数据库**：MongoDB（初期） → PostgreSQL（进阶） 。。。
 
 ---
 
