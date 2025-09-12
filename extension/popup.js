@@ -4,6 +4,9 @@
 let currentProject = null;
 let currentMode = 'stepByStep'; // 'stepByStep' or 'auto'
 let isProcessing = false;
+let isOnline = navigator.onLine;
+let connectionRetryCount = 0;
+const MAX_CONNECTION_RETRIES = 3;
 
 // API配置
 const API_BASE_URL = 'http://localhost:3000';
@@ -54,7 +57,40 @@ const elements = {
 };
 
 // API调用辅助函数
+// 检查网络连接
+async function checkConnection() {
+    if (!navigator.onLine) {
+        throw new Error('网络连接已断开，请检查网络设置');
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/health`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000)
+        });
+        return response.ok;
+    } catch (error) {
+        return false;
+    }
+}
+
+// 更新连接状态显示
+function updateConnectionStatus(connected) {
+    isOnline = connected;
+    if (elements.statusIndicator) {
+        elements.statusIndicator.className = connected 
+            ? 'w-2 h-2 bg-green-500 rounded-full'
+            : 'w-2 h-2 bg-red-500 rounded-full';
+        elements.statusIndicator.title = connected ? '已连接' : '连接断开';
+    }
+}
+
 async function apiCall(endpoint, options = {}, retries = MAX_RETRIES) {
+    // 检查网络连接
+    if (!navigator.onLine) {
+        throw new Error('网络连接已断开，请检查网络设置');
+    }
+    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
     
@@ -66,8 +102,22 @@ async function apiCall(endpoint, options = {}, retries = MAX_RETRIES) {
         
         clearTimeout(timeoutId);
         
+        // 连接成功，重置重试计数
+        connectionRetryCount = 0;
+        updateConnectionStatus(true);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            let errorMessage = `服务器错误 (${response.status})`;
+            
+            if (response.status === 429) {
+                errorMessage = '请求过于频繁，请稍后再试';
+            } else if (response.status === 500) {
+                errorMessage = '服务器内部错误，请稍后再试';
+            } else if (response.status === 503) {
+                errorMessage = '服务暂时不可用，请稍后再试';
+            }
+            
+            throw new Error(errorMessage);
         }
         
         return await response.json();
@@ -78,10 +128,19 @@ async function apiCall(endpoint, options = {}, retries = MAX_RETRIES) {
             throw new Error('请求超时，请检查网络连接');
         }
         
-        if (retries > 0 && (error.name === 'TypeError' || error.message.includes('fetch'))) {
-            console.log(`API调用失败，重试中... (剩余重试次数: ${retries - 1})`);
-            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
-            return apiCall(endpoint, options, retries - 1);
+        // 网络连接错误处理
+        if (error.name === 'TypeError' || error.message.includes('fetch')) {
+            updateConnectionStatus(false);
+            connectionRetryCount++;
+            
+            if (retries > 0 && connectionRetryCount <= MAX_CONNECTION_RETRIES) {
+                console.log(`API调用失败，重试中... (剩余重试次数: ${retries - 1})`);
+                showNotification(`连接失败，正在重试... (${connectionRetryCount}/${MAX_CONNECTION_RETRIES})`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, 2000 * connectionRetryCount)); // 递增延迟
+                return apiCall(endpoint, options, retries - 1);
+            } else {
+                throw new Error('无法连接到服务器，请确保后端服务正在运行');
+            }
         }
         
         throw error;
@@ -93,10 +152,33 @@ function initApp() {
     initializeElements();
     setupEventListeners();
     setupTabSwitching();
+    setupNetworkListeners();
     loadHistory();
     updateCharCount();
+    updateStatus('ready', '准备就绪');
+    
+    // 初始连接状态检查
+    checkConnection().then(connected => {
+        updateConnectionStatus(connected);
+    }).catch(() => {
+        updateConnectionStatus(false);
+    });
     
     console.log('Idea to MEU Plugin initialized with modern UI');
+}
+
+// 设置网络状态监听
+function setupNetworkListeners() {
+    window.addEventListener('online', () => {
+        updateConnectionStatus(true);
+        showNotification('网络连接已恢复', 'success');
+        connectionRetryCount = 0;
+    });
+    
+    window.addEventListener('offline', () => {
+        updateConnectionStatus(false);
+        showNotification('网络连接已断开', 'error');
+    });
 }
 
 // 初始化DOM元素
@@ -310,13 +392,18 @@ async function handleAnalyze() {
         
         if (result.success) {
             displayResults(result.data);
-            saveToHistory({
-                idea,
-                complexity,
-                language,
-                result: result.data,
-                timestamp: new Date().toISOString()
-            });
+            
+            // 只有在有实际代码内容时才保存到历史记录
+            if (result.data && (result.data.code && result.data.code !== '// 代码生成中...' || result.data.plan)) {
+                saveToHistory({
+                    idea,
+                    complexity,
+                    language,
+                    result: result.data,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             updateStatus('success', '分析完成');
         } else {
             throw new Error(result.error || '分析失败');
@@ -456,7 +543,22 @@ function createStepElement(step, index, isCurrent) {
                     </span>
                 </div>
                 <p class="text-sm text-slate-400 mt-1">${step.description}</p>
-                ${step.code ? `<pre class="text-xs bg-slate-800 p-2 rounded mt-2 overflow-x-auto text-slate-300"><code>${step.code}</code></pre>` : ''}
+                ${step.code ? `<div class="mt-2">
+                    <div class="text-xs text-slate-400 mb-1">生成的代码:</div>
+                    <pre class="text-xs bg-slate-800 p-2 rounded overflow-x-auto text-slate-300"><code>${step.code}</code></pre>
+                </div>` : ''}
+                ${step.output ? `<div class="mt-2">
+                    <div class="text-xs text-slate-400 mb-1">执行输出:</div>
+                    <pre class="text-xs bg-green-900/20 border border-green-700 p-2 rounded overflow-x-auto text-green-300"><code>${step.output}</code></pre>
+                </div>` : ''}
+                ${step.executionResult && step.executionResult.error ? `<div class="mt-2">
+                    <div class="text-xs text-red-400 mb-1">执行错误:</div>
+                    <pre class="text-xs bg-red-900/20 border border-red-700 p-2 rounded overflow-x-auto text-red-300"><code>${step.executionResult.error}</code></pre>
+                </div>` : ''}
+                ${step.error ? `<div class="mt-2">
+                    <div class="text-xs text-red-400 mb-1">错误信息:</div>
+                    <pre class="text-xs bg-red-900/20 border border-red-700 p-2 rounded overflow-x-auto text-red-300"><code>${step.error}</code></pre>
+                </div>` : ''}
             </div>
         </div>
     `;
@@ -527,29 +629,32 @@ async function executeCurrentStep() {
         currentStep.status = 'in_progress';
         renderStepsList(currentProject);
         
-        const result = await apiCall('/api/execute', {
+        const result = await apiCall(`/api/meu/execute/${currentProject.id}/${currentProject.currentStep + 1}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 idea: currentStep.description || currentStep.title,
-                language: currentProject.language || 'javascript',
-                options: {
-                    projectId: currentProject.id,
-                    stepIndex: currentProject.currentStep
-                }
+                language: currentProject.language || 'javascript'
             })
         });
         
         if (result.success) {
             // 更新步骤状态为完成
             currentStep.status = 'completed';
-            if (result.data.code) {
+            if (result.data && result.data.code) {
                 currentStep.code = result.data.code;
+            }
+            if (result.data && result.data.output) {
+                currentStep.output = result.data.output;
+            }
+            if (result.data && result.data.executionResult) {
+                currentStep.executionResult = result.data.executionResult;
             }
             
             // 移动到下一步
+            const completedStepNumber = currentProject.currentStep + 1;
             currentProject.currentStep++;
             
             // 更新显示
@@ -557,35 +662,76 @@ async function executeCurrentStep() {
             renderStepsList(currentProject);
             
             updateStatus('success', '步骤完成');
-            showNotification(`步骤 ${currentProject.currentStep} 执行完成`, 'success');
+            showNotification(`步骤 ${completedStepNumber} 执行完成`, 'success');
             
             // 如果是自动模式且还有下一步，继续执行
             if (currentMode === 'auto' && currentProject.currentStep < currentProject.plan.steps.length) {
                 setTimeout(() => executeCurrentStep(), 1000);
             }
+            
+            // 如果所有步骤都完成了，保存到历史记录
+            if (currentProject.currentStep >= currentProject.plan.steps.length) {
+                const completedSteps = currentProject.plan.steps.filter(step => step.status === 'completed');
+                const allCode = completedSteps.map(step => step.code).filter(code => code).join('\n\n');
+                
+                if (allCode) {
+                    saveToHistory({
+                        idea: currentProject.idea,
+                        complexity: 'MEU项目',
+                        language: currentProject.language,
+                        result: {
+                            code: allCode,
+                            explanation: `MEU项目完成 - ${completedSteps.length}个步骤`,
+                            plan: currentProject.plan
+                        },
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            }
         } else {
-            throw new Error(result.error || '步骤执行失败');
+            throw new Error(result.error || result.message || '步骤执行失败');
         }
         
     } catch (error) {
         console.error('Step execution error:', error);
         currentStep.status = 'error';
+        currentStep.error = error.message;
         renderStepsList(currentProject);
         
         let errorMessage = '步骤执行失败';
+        let canRetry = false;
         
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            errorMessage = '无法连接到服务器，请确保后端服务正在运行';
-        } else if (error.message.includes('HTTP error')) {
+            errorMessage = '无法连接到服务器，请检查网络连接';
+            canRetry = true;
+        } else if (error.message.includes('请求超时')) {
+            errorMessage = '请求超时，请稍后重试';
+            canRetry = true;
+        } else if (error.message.includes('服务器错误')) {
             errorMessage = `服务器错误: ${error.message}`;
+            canRetry = true;
+        } else if (error.message.includes('请求过于频繁')) {
+            errorMessage = '请求过于频繁，请稍后再试';
+            canRetry = true;
         } else {
             errorMessage = `步骤执行失败: ${error.message}`;
         }
         
         showNotification(errorMessage, 'error');
         updateStatus('error', '执行失败');
+        
+        // 如果可以重试，显示重试按钮
+        if (canRetry) {
+            setTimeout(() => {
+                if (confirm(`${errorMessage}\n\n是否重试执行此步骤？`)) {
+                    currentStep.status = 'pending';
+                    executeCurrentStep();
+                }
+            }, 1000);
+        }
     } finally {
         hideLoading();
+        isProcessing = false;
     }
 }
 
@@ -607,6 +753,13 @@ function modifyCurrentStep() {
 
 // 处理下载
 function handleDownload() {
+    // 如果有MEU项目，下载项目文件
+    if (currentProject && currentProject.plan && currentProject.plan.steps) {
+        downloadMEUProject();
+        return;
+    }
+    
+    // 否则下载单个代码文件
     if (!elements.codeContent) return;
     
     const code = elements.codeContent.textContent;
@@ -621,6 +774,38 @@ function handleDownload() {
     
     downloadFile(code, filename);
     showNotification('代码已下载', 'success');
+}
+
+// 下载MEU项目文件
+function downloadMEUProject() {
+    if (!currentProject) return;
+    
+    const completedSteps = currentProject.plan.steps.filter(step => step.status === 'completed' && step.code);
+    
+    if (completedSteps.length === 0) {
+        showNotification('没有已完成的步骤可下载', 'warning');
+        return;
+    }
+    
+    const language = currentProject.language || 'javascript';
+    const extension = getFileExtension(language);
+    
+    // 下载每个步骤的代码文件
+    completedSteps.forEach((step, index) => {
+        const stepNumber = currentProject.plan.steps.indexOf(step) + 1;
+        const filename = `step_${stepNumber}_${step.title.replace(/[^a-zA-Z0-9]/g, '_')}.${extension}`;
+        downloadFile(step.code, filename);
+    });
+    
+    // 创建项目总结文件
+    const summary = `项目: ${currentProject.idea}\n语言: ${language}\n\n步骤总结:\n${completedSteps.map((step, index) => {
+        const stepNumber = currentProject.plan.steps.indexOf(step) + 1;
+        return `${stepNumber}. ${step.title}\n   ${step.description}\n   状态: ${getStatusText(step.status)}${step.output ? '\n   输出: ' + step.output : ''}`;
+    }).join('\n\n')}`;
+    
+    downloadFile(summary, 'project_summary.txt');
+    
+    showNotification(`已下载 ${completedSteps.length + 1} 个文件`, 'success');
 }
 
 // 处理继续
@@ -750,58 +935,141 @@ function loadHistory() {
 // 创建历史记录项
 function createHistoryItem(item, index) {
     const div = document.createElement('div');
-    div.className = 'bg-slate-700 rounded-lg border border-slate-600 p-4 hover:bg-slate-600 hover:shadow-lg transition-all duration-200 cursor-pointer';
+    div.className = 'bg-slate-700 rounded-lg border border-slate-600 p-4 hover:bg-slate-600 hover:shadow-lg transition-all duration-200';
     
     const date = new Date(item.timestamp).toLocaleString('zh-CN');
+    const hasResult = item.result && (item.result.code || item.result.output || item.result.plan);
+    const hasCode = item.result && item.result.code && item.result.code !== '// 代码生成中...' && item.result.code.trim() !== '';
+    const fileCount = item.result && item.result.plan ? item.result.plan.steps.filter(step => step.status === 'completed' && step.code).length : (hasCode ? 1 : 0);
+    const hasFiles = fileCount > 0;
     
     div.innerHTML = `
-        <div class="flex items-start justify-between">
-            <div class="flex-1 min-w-0">
-                <h4 class="text-sm font-semibold text-slate-200 truncate">${item.idea}</h4>
-                <div class="flex items-center space-x-2 mt-1">
-                    <span class="text-xs px-2 py-1 bg-indigo-900 text-indigo-300 rounded">${item.language}</span>
-                    <span class="text-xs px-2 py-1 bg-slate-600 text-slate-300 rounded">${item.complexity}</span>
+        <div class="space-y-3">
+            <!-- 基本信息 -->
+            <div class="flex items-start justify-between">
+                <div class="flex-1 min-w-0 cursor-pointer" onclick="loadHistoryItem(${index})">
+                    <h4 class="text-sm font-semibold text-slate-200 truncate">${item.idea}</h4>
+                    <div class="flex items-center space-x-2 mt-1">
+                        <span class="text-xs px-2 py-1 bg-indigo-900 text-indigo-300 rounded">${item.language}</span>
+                        <span class="text-xs px-2 py-1 bg-slate-600 text-slate-300 rounded">${item.complexity}</span>
+                        ${hasResult ? '<span class="text-xs px-2 py-1 bg-green-900 text-green-300 rounded">已完成</span>' : '<span class="text-xs px-2 py-1 bg-yellow-900 text-yellow-300 rounded">未完成</span>'}
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">${date}</p>
+                    ${hasFiles ? `<p class="text-xs text-slate-300 mt-1">生成文件: ${fileCount} 个</p>` : ''}
                 </div>
-                <p class="text-xs text-slate-400 mt-2">${date}</p>
+                <button class="text-slate-400 hover:text-red-400 transition-colors duration-200" onclick="removeHistoryItem(${index})">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
             </div>
-            <button class="text-slate-400 hover:text-red-400 transition-colors duration-200" onclick="removeHistoryItem(${index})">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                </svg>
-            </button>
+            
+            <!-- 代码预览和操作按钮 -->
+            ${hasResult ? `
+                <div class="border-t border-slate-600 pt-3">
+                    ${hasCode ? `
+                        <div class="mb-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-medium text-slate-300">生成的代码:</span>
+                                <button class="text-xs text-indigo-400 hover:text-indigo-300" onclick="toggleCodePreview(${index})">
+                                    <span id="toggleText_${index}">显示代码</span>
+                                </button>
+                            </div>
+                            <div id="codePreview_${index}" class="hidden bg-slate-800 rounded p-3 text-xs font-mono text-slate-300 max-h-32 overflow-y-auto">
+                                <pre class="whitespace-pre-wrap">${item.result.code.substring(0, 500)}${item.result.code.length > 500 ? '...' : ''}</pre>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-2 px-3 rounded font-medium transition-colors" onclick="loadHistoryItem(${index})">
+                            📋 加载项目
+                        </button>
+                        ${hasCode ? `
+                            <button class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-3 rounded font-medium transition-colors" onclick="downloadHistoryItem(${index})">
+                                💾 下载代码
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : ''}
         </div>
     `;
-    
-    div.addEventListener('click', (e) => {
-        if (e.target.closest('button')) return;
-        loadHistoryItem(item);
-    });
     
     return div;
 }
 
 // 加载历史记录项
-function loadHistoryItem(item) {
-    if (elements.ideaInput) {
-        elements.ideaInput.value = item.idea;
-        updateCharCount();
+function loadHistoryItem(index) {
+    try {
+        const history = JSON.parse(localStorage.getItem('ideaToMeuHistory') || '[]');
+        const item = history[index];
+        
+        if (!item) {
+            showNotification('历史记录不存在', 'error');
+            return;
+        }
+        
+        if (elements.ideaInput) {
+            elements.ideaInput.value = item.idea;
+            updateCharCount();
+        }
+        
+        if (elements.complexitySelect) {
+            elements.complexitySelect.value = item.complexity;
+        }
+        
+        if (elements.languageSelect) {
+            elements.languageSelect.value = item.language;
+        }
+        
+        if (item.result) {
+            displayResults(item.result);
+        }
+        
+        // 切换到输入标签页
+        switchTab('input');
+        showNotification('历史记录已加载', 'success');
+    } catch (error) {
+        console.error('Failed to load history item:', error);
+        showNotification('加载历史记录失败', 'error');
     }
+}
+
+// 切换代码预览显示
+function toggleCodePreview(index) {
+    const preview = document.getElementById(`codePreview_${index}`);
+    const toggleText = document.getElementById(`toggleText_${index}`);
     
-    if (elements.complexitySelect) {
-        elements.complexitySelect.value = item.complexity;
+    if (preview && toggleText) {
+        if (preview.classList.contains('hidden')) {
+            preview.classList.remove('hidden');
+            toggleText.textContent = '隐藏代码';
+        } else {
+            preview.classList.add('hidden');
+            toggleText.textContent = '显示代码';
+        }
     }
-    
-    if (elements.languageSelect) {
-        elements.languageSelect.value = item.language;
+}
+
+// 下载历史记录项的代码
+function downloadHistoryItem(index) {
+    try {
+        const history = JSON.parse(localStorage.getItem('ideaToMeuHistory') || '[]');
+        const item = history[index];
+        
+        if (!item || !item.result || !item.result.code) {
+            showNotification('没有可下载的代码', 'error');
+            return;
+        }
+        
+        const filename = `${item.idea.substring(0, 20).replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.${getFileExtension(item.language)}`;
+        downloadFile(item.result.code, filename);
+        showNotification('代码下载成功', 'success');
+    } catch (error) {
+        console.error('Failed to download history item:', error);
+        showNotification('下载失败', 'error');
     }
-    
-    if (item.result) {
-        displayResults(item.result);
-    }
-    
-    // 切换到输入标签页
-    switchTab('input');
-    showNotification('历史记录已加载', 'success');
 }
 
 // 删除历史记录项
