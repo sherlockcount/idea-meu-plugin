@@ -140,9 +140,9 @@ function switchTab(tabName) {
     // 更新按钮状态
     elements.tabButtons?.forEach(btn => {
         if (btn.getAttribute('data-tab') === tabName) {
-            btn.className = btn.className.replace('tab-inactive', 'tab-active');
+            btn.className = 'tab-button px-6 py-3 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg';
         } else {
-            btn.className = btn.className.replace('tab-active', 'tab-inactive');
+            btn.className = 'tab-button px-6 py-3 rounded-lg font-medium transition-all duration-200 bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-slate-200';
         }
     });
     
@@ -178,15 +178,15 @@ function setMode(mode) {
     currentMode = mode;
     
     if (mode === 'stepByStep') {
-        elements.stepByStepMode?.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
-        elements.stepByStepMode?.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-600');
-        elements.autoMode?.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
-        elements.autoMode?.classList.add('border-gray-200', 'bg-gray-50', 'text-gray-600');
+        elements.stepByStepMode?.classList.add('border-indigo-500', 'bg-indigo-900', 'text-indigo-300');
+        elements.stepByStepMode?.classList.remove('border-slate-600', 'bg-slate-700', 'text-slate-300');
+        elements.autoMode?.classList.remove('border-indigo-500', 'bg-indigo-900', 'text-indigo-300');
+        elements.autoMode?.classList.add('border-slate-600', 'bg-slate-700', 'text-slate-300');
     } else {
-        elements.autoMode?.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
-        elements.autoMode?.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-600');
-        elements.stepByStepMode?.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
-        elements.stepByStepMode?.classList.add('border-gray-200', 'bg-gray-50', 'text-gray-600');
+        elements.autoMode?.classList.add('border-indigo-500', 'bg-indigo-900', 'text-indigo-300');
+        elements.autoMode?.classList.remove('border-slate-600', 'bg-slate-700', 'text-slate-300');
+        elements.stepByStepMode?.classList.remove('border-indigo-500', 'bg-indigo-900', 'text-indigo-300');
+        elements.stepByStepMode?.classList.add('border-slate-600', 'bg-slate-700', 'text-slate-300');
     }
 }
 
@@ -384,8 +384,8 @@ function renderStepsList(project) {
 // 创建步骤元素
 function createStepElement(step, index, isCurrent) {
     const div = document.createElement('div');
-    div.className = `bg-white rounded-xl border-2 p-4 transition-all duration-200 ${
-        isCurrent ? 'border-blue-500 shadow-lg' : 'border-gray-200'
+    div.className = `bg-slate-700 rounded-xl border-2 p-4 transition-all duration-200 ${
+        isCurrent ? 'border-indigo-500 shadow-lg shadow-indigo-500/20' : 'border-slate-600'
     }`;
     
     const statusIcon = getStatusIcon(step.status);
@@ -398,20 +398,20 @@ function createStepElement(step, index, isCurrent) {
             </div>
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
-                    <h4 class="text-sm font-semibold text-gray-800 truncate">
+                    <h4 class="text-sm font-semibold text-slate-200 truncate">
                         步骤 ${index + 1}: ${step.title || step.description}
                     </h4>
                     <span class="text-xs px-2 py-1 rounded-full ${
                         step.status === 'completed' ? 'bg-green-100 text-green-800' :
                         step.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                        step.status === 'error' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-600'
+                        step.status === 'error' ? 'bg-red-900 text-red-300' :
+                        'bg-slate-600 text-slate-300'
                     }">
                         ${getStatusText(step.status)}
                     </span>
                 </div>
-                <p class="text-sm text-gray-600 mt-1">${step.description}</p>
-                ${step.code ? `<pre class="text-xs bg-gray-50 p-2 rounded mt-2 overflow-x-auto"><code>${step.code}</code></pre>` : ''}
+                <p class="text-sm text-slate-400 mt-1">${step.description}</p>
+                ${step.code ? `<pre class="text-xs bg-slate-800 p-2 rounded mt-2 overflow-x-auto text-slate-300"><code>${step.code}</code></pre>` : ''}
             </div>
         </div>
     `;
@@ -696,21 +696,21 @@ function loadHistory() {
 // 创建历史记录项
 function createHistoryItem(item, index) {
     const div = document.createElement('div');
-    div.className = 'bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 cursor-pointer';
+    div.className = 'bg-slate-700 rounded-lg border border-slate-600 p-4 hover:bg-slate-600 hover:shadow-lg transition-all duration-200 cursor-pointer';
     
     const date = new Date(item.timestamp).toLocaleString('zh-CN');
     
     div.innerHTML = `
         <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">
-                <h4 class="text-sm font-semibold text-gray-800 truncate">${item.idea}</h4>
+                <h4 class="text-sm font-semibold text-slate-200 truncate">${item.idea}</h4>
                 <div class="flex items-center space-x-2 mt-1">
-                    <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">${item.language}</span>
-                    <span class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">${item.complexity}</span>
+                    <span class="text-xs px-2 py-1 bg-indigo-900 text-indigo-300 rounded">${item.language}</span>
+                    <span class="text-xs px-2 py-1 bg-slate-600 text-slate-300 rounded">${item.complexity}</span>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">${date}</p>
+                <p class="text-xs text-slate-400 mt-2">${date}</p>
             </div>
-            <button class="text-gray-400 hover:text-red-500 transition-colors duration-200" onclick="removeHistoryItem(${index})">
+            <button class="text-slate-400 hover:text-red-400 transition-colors duration-200" onclick="removeHistoryItem(${index})">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
                 </svg>
