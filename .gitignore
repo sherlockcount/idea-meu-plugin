@@ -21,6 +21,14 @@ mongod.lock
 *.wt
 *.log
 
+# Docker volumes (if using local bind mounts)
+data/
+mongo-data/
+
+# Local MongoDB files
+*.pid
+*.sock
+
 # Logs
 logs/
 *.log
