@@ -180,26 +180,15 @@ backend/build/
 config/production.json
 config/local.json
 
-# MEU project files
-projects/*/meu_plan.json
-projects/meu_*/
+# Docker执行相关文件
+docker/execution/projects/
 
-# 执行状态文件
-projects/*/step_*.*
-projects/*/*_error.txt
-projects/*/*_output.txt
-projects/*/*_status.json
-projects/*/*.txt
-projects/*/*.json
-projects/*/output/
-projects/*/temp/
-projects/*/logs/
-projects/*/cache/
+# 项目执行目录
+projects/
 
-# 根目录下的执行状态文件
-projects/*_*_error.txt
-projects/*_*_output.txt
-projects/*_*_status.json
+# MEU project files (已被projects/规则覆盖，保留作为文档)
+# projects/*/meu_plan.json
+# projects/meu_*/
 
 # 后端项目执行文件
 backend/projects/*_*_error.txt

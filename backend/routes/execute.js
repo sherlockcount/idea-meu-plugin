@@ -59,7 +59,7 @@ const executeCode = async (code, language, executionId, projectId, stepId) => {
     
     return {
       success: result.success,
-      output: result.output || '代码执行完成',
+      output: result.output || (result.success ? '代码执行完成，但无输出' : ''),
       error: result.error || null,
       executionTime,
       status: result.status,

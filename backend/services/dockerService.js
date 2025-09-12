@@ -229,8 +229,8 @@ class DockerService {
                 '--ulimit', 'nproc=100',
                 '--ulimit', 'nofile=1024:2048',
                 // 挂载目录
-                '-v', `${hostProjectPath}:/workspace/projects/${projectId}:ro`,
-                '-v', `${process.env.DOCKER_EXECUTION === 'true' ? path.join(getProjectRoot(), 'projects') : path.join(__dirname, '../projects')}:/workspace/output`,
+                '-v', `${hostProjectPath}:/workspace/projects/${projectId}:rw`,
+                '-v', `${path.join(getProjectRoot(), 'docker/execution/projects')}:/workspace/output:rw`,
                 '-w', '/workspace',
                 '-d',
                 this.executionImage,
@@ -294,7 +294,6 @@ class DockerService {
                 'exec',
                 containerName,
                 'timeout', `${policy.resourceLimits.executionTimeout || 30}s`, // 添加超时保护
-                '/bin/bash',
                 '/workspace/sandbox.sh',
                 language,
                 projectId,
@@ -306,10 +305,11 @@ class DockerService {
             const result = await this.runDockerCommand('exec', execArgs.slice(1));
             const executionTime = Date.now() - startTime;
             
-            // 读取执行结果
-            const outputPath = path.join(__dirname, '../projects', `${projectId}_${stepId}_output.txt`);
-            const errorPath = path.join(__dirname, '../projects', `${projectId}_${stepId}_error.txt`);
-            const statusPath = path.join(__dirname, '../projects', `${projectId}_${stepId}_status.json`);
+            // 读取执行结果 - 从Docker容器的output目录读取
+            const projectRoot = process.env.DOCKER_EXECUTION === 'true' ? '/app' : path.join(__dirname, '../..');
+            const outputPath = path.join(projectRoot, 'docker/execution/projects', `${projectId}_${stepId}_output.txt`);
+            const errorPath = path.join(projectRoot, 'docker/execution/projects', `${projectId}_${stepId}_error.txt`);
+            const statusPath = path.join(projectRoot, 'docker/execution/projects', `${projectId}_${stepId}_status.json`);
 
             const executionResult = {
                 output: '',

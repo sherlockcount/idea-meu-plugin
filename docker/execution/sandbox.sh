@@ -48,6 +48,8 @@ execute_code() {
     local output_file="$OUTPUT_DIR/${PROJECT_ID}_${STEP_ID}_output.txt"
     local error_file="$OUTPUT_DIR/${PROJECT_ID}_${STEP_ID}_error.txt"
     local status_file="$OUTPUT_DIR/${PROJECT_ID}_${STEP_ID}_status.json"
+    echo "[DEBUG] OUTPUT_DIR content before execution:" >> "$error_file"
+    ls -la "$OUTPUT_DIR" >> "$error_file"
     
     # 根据语言执行代码
     case "$LANGUAGE" in
@@ -68,15 +70,11 @@ execute_code() {
         "go")
             timeout $MAX_EXECUTION_TIME go run "$CODE_FILE" > "$output_file" 2> "$error_file"
             ;;
-        "cpp")
-            g++ -o program "$CODE_FILE" 2> "$error_file"
-            if [ $? -eq 0 ]; then
-                timeout $MAX_EXECUTION_TIME ./program > "$output_file" 2>> "$error_file"
-            fi
-            ;;
+
         "c")
             gcc -o program "$CODE_FILE" 2> "$error_file"
             if [ $? -eq 0 ]; then
+                chmod +x program
                 timeout $MAX_EXECUTION_TIME ./program > "$output_file" 2>> "$error_file"
             fi
             ;;

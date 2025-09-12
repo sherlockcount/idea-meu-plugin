@@ -851,8 +851,6 @@ function getFileExtension(language) {
     const extensions = {
         javascript: 'js',
         python: 'py',
-        java: 'java',
-        cpp: 'cpp',
         html: 'html'
     };
     return extensions[language] || 'txt';
