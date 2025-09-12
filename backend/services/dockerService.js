@@ -138,6 +138,57 @@ class DockerService {
             ? path.join('/app', 'projects', projectId)
             : path.join(__dirname, '../projects', projectId);
         
+        // 在Docker环境中，使用主机路径进行挂载
+        // 动态获取项目根目录，避免硬编码绝对路径
+        const getProjectRoot = () => {
+            if (process.env.PROJECT_ROOT) {
+                return process.env.PROJECT_ROOT;
+            }
+            
+            // 在Docker环境中，使用挂载的主机路径
+            if (process.env.DOCKER_EXECUTION === 'true') {
+                // 通过环境变量或挂载点推断主机项目根目录
+                const hostPath = process.env.HOST_PROJECT_ROOT;
+                if (hostPath) {
+                    return hostPath;
+                }
+                
+                // 尝试从挂载的backend目录推断项目根目录
+                // 容器内 /app 对应主机的项目根目录
+                const backendPath = '/app';
+                const projectRoot = path.dirname(backendPath);
+                
+                // 检查是否存在docker-compose.yml来验证路径
+                try {
+                    const composePath = path.join(projectRoot, 'docker-compose.yml');
+                    if (require('fs').existsSync(composePath)) {
+                        return projectRoot;
+                    }
+                } catch (e) {
+                    // 忽略错误，继续使用默认逻辑
+                }
+                
+                // 如果无法确定，返回当前工作目录的父目录
+                return process.cwd();
+            }
+            
+            // 非Docker环境：从当前文件位置向上查找项目根目录
+            let currentDir = __dirname;
+            while (currentDir !== path.dirname(currentDir)) {
+                if (require('fs').existsSync(path.join(currentDir, 'docker-compose.yml'))) {
+                    return currentDir;
+                }
+                currentDir = path.dirname(currentDir);
+            }
+            
+            // 如果找不到，使用默认路径
+            return path.join(__dirname, '../..');
+        };
+        
+        const hostProjectPath = process.env.DOCKER_EXECUTION === 'true'
+            ? path.join(getProjectRoot(), 'projects', projectId)
+            : projectPath;
+        
         try {
             // 确保安全策略已加载
             if (!securityPolicy) {
@@ -178,8 +229,8 @@ class DockerService {
                 '--ulimit', 'nproc=100',
                 '--ulimit', 'nofile=1024:2048',
                 // 挂载目录
-                '-v', `${projectPath}:/workspace/projects/${projectId}:ro`,
-                '-v', `${path.join(__dirname, '../projects')}:/workspace/output`,
+                '-v', `${hostProjectPath}:/workspace/projects/${projectId}:ro`,
+                '-v', `${process.env.DOCKER_EXECUTION === 'true' ? path.join(getProjectRoot(), 'projects') : path.join(__dirname, '../projects')}:/workspace/output`,
                 '-w', '/workspace',
                 '-d',
                 this.executionImage,

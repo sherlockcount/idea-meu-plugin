@@ -37,6 +37,8 @@ cp backend/.env.example backend/.env
 
 编辑 `backend/.env` 文件，配置必要参数：
 
+> **重要**: 跨设备部署时，请务必正确配置 `HOST_PROJECT_ROOT` 环境变量为项目的绝对路径，以确保Docker容器能正确挂载项目目录。
+
 ```env
 # 基础配置
 PORT=3000
@@ -49,6 +51,12 @@ MONGODB_URI=mongodb://admin:password123@localhost:27017/idea-meu?authSource=admi
 DEEPSEEK_API_KEY=your-deepseek-api-key
 DEEPSEEK_API_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-coder
+
+# Docker执行配置
+DOCKER_EXECUTION=true
+# 跨设备兼容性：指定项目根目录的绝对路径
+# 在不同设备上部署时，请修改为实际的项目路径
+HOST_PROJECT_ROOT=/path/to/your/idea-to-meu-plugin
 
 # 安全配置
 JWT_SECRET=your-secure-jwt-secret
@@ -93,6 +101,51 @@ npm run dev
 - **健康检查**: http://localhost:3000/health
 - **API文档**: http://localhost:3000/api
 
+## 🔄 跨设备部署配置
+
+当在不同设备或服务器上部署时，需要特别注意路径配置以确保Docker容器能正确访问项目文件。
+
+### 配置步骤
+
+1. **设置项目根路径**
+   
+   在 `backend/.env` 文件中配置：
+   ```env
+   HOST_PROJECT_ROOT=/absolute/path/to/your/idea-to-meu-plugin
+   ```
+   
+   示例路径：
+   - macOS: `/Users/username/idea-to-meu-plugin`
+   - Linux: `/home/username/idea-to-meu-plugin`
+   - Windows (WSL): `/mnt/c/Users/username/idea-to-meu-plugin`
+
+2. **Docker文件共享设置**
+   
+   确保Docker Desktop中已添加项目目录到文件共享列表：
+   - 打开Docker Desktop
+   - 进入 Settings → Resources → File Sharing
+   - 添加项目根目录路径
+   - 点击 "Apply & Restart"
+
+3. **验证配置**
+   
+   ```bash
+   # 启动服务后验证路径挂载
+   docker exec idea-meu-backend ls -la /app/projects/
+   
+   # 测试代码执行功能
+   curl -X POST http://localhost:3000/api/execute \
+     -H "Content-Type: application/json" \
+     -d '{"code":"print('Hello World')","language":"python"}'
+   ```
+
+### 注意事项
+
+- 路径必须使用绝对路径，不能使用相对路径或 `~` 符号
+- Windows用户建议使用WSL2环境进行部署
+- 确保Docker有足够权限访问指定目录
+- 修改配置后需要重启Docker服务
+
 ## 🔧 生产环境部署
 
 ### 使用PM2部署
@@ -133,12 +186,17 @@ services:
     environment:
       NODE_ENV: production
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/idea-meu?authSource=admin
+      DOCKER_EXECUTION: "true"
+      # 跨设备兼容性：指定项目根目录的绝对路径
+      HOST_PROJECT_ROOT: "/path/to/your/idea-to-meu-plugin"
     ports:
       - "3000:3000"
     depends_on:
       - mongodb
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      # 挂载项目目录以支持代码执行
+      - "/path/to/your/idea-to-meu-plugin/projects:/app/projects"
 
   frontend:
     build: .
@@ -278,6 +336,30 @@ pm2 restart all
    lsof -i :3000
    lsof -i :3001
    ```
+
+5. **跨设备部署路径问题**
+   
+   **问题**: 代码执行失败，提示路径未共享或Docker挂载错误
+   
+   **解决方案**:
+   ```bash
+   # 1. 确保HOST_PROJECT_ROOT环境变量设置正确
+   # 在.env文件中设置项目的绝对路径
+   HOST_PROJECT_ROOT=/Users/username/path/to/idea-to-meu-plugin
+   
+   # 2. 检查Docker文件共享设置
+   # 在Docker Desktop中，确保项目目录已添加到文件共享列表
+   
+   # 3. 验证路径挂载
+   docker exec idea-meu-backend ls -la /app/projects/
+   
+   # 4. 重启服务应用新配置
+   docker-compose restart backend
+   ```
+   
+   **注意**: 不同操作系统的路径格式不同：
+   - macOS/Linux: `/Users/username/project` 或 `/home/username/project`
+   - Windows: `C:\Users\username\project` (在WSL中使用Linux格式)
 
 ### 日志级别
 

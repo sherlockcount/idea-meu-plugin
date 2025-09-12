@@ -184,7 +184,7 @@ config/local.json
 projects/*/meu_plan.json
 projects/meu_*/
 
-# Generated execution files and project artifacts
+# 执行状态文件
 projects/*/step_*.*
 projects/*/*_error.txt
 projects/*/*_output.txt
@@ -196,7 +196,12 @@ projects/*/temp/
 projects/*/logs/
 projects/*/cache/
 
-# Backend project artifacts
+# 根目录下的执行状态文件
+projects/*_*_error.txt
+projects/*_*_output.txt
+projects/*_*_status.json
+
+# 后端项目执行文件
 backend/projects/*_*_error.txt
 backend/projects/*_*_output.txt
 backend/projects/*_*_status.json
