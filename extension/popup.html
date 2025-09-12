@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idea → MEU</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        <span class="logo-text">Idea → MEU</span>
+      </div>
+      <div class="status-indicator" id="statusIndicator">
+        <div class="status-dot"></div>
+        <span class="status-text">就绪</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Input Section -->
+      <section class="input-section">
+        <div class="input-header">
+          <h2>💡 描述你的想法</h2>
+          <p>AI将帮你将想法转化为可执行代码</p>
+        </div>
+        <div class="input-container">
+          <textarea 
+            id="ideaInput" 
+            placeholder="例如：做一个展示随机名言的网页..."
+            rows="4"
+          ></textarea>
+          <div class="input-actions">
+            <button id="clearBtn" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              清空
+            </button>
+            <button id="executeBtn" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="5,3 19,12 5,21" fill="currentColor"/>
+              </svg>
+              开始构建
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results Section -->
+      <section class="results-section" id="resultsSection" style="display: none;">
+        <div class="results-header">
+          <h3>🚀 执行结果</h3>
+          <div class="results-actions">
+            <button id="downloadBtn" class="btn btn-outline">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 2.58579 20.4142C2.21071 20.0391 2 19.5304 2 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="7,10 12,15 17,10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              下载代码
+            </button>
+            <button id="continueBtn" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polyline points="9,18 15,12 9,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              继续扩展
+            </button>
+          </div>
+        </div>
+        <div class="results-content">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="output">输出</button>
+            <button class="tab-btn" data-tab="code">代码</button>
+            <button class="tab-btn" data-tab="logs">日志</button>
+          </div>
+          <div class="tab-content">
+            <div id="outputTab" class="tab-pane active">
+              <div id="outputContent" class="output-content">
+                <!-- 执行结果将在这里显示 -->
+              </div>
+            </div>
+            <div id="codeTab" class="tab-pane">
+              <pre id="codeContent" class="code-content">
+                <!-- 生成的代码将在这里显示 -->
+              </pre>
+            </div>
+            <div id="logsTab" class="tab-pane">
+              <div id="logsContent" class="logs-content">
+                <!-- 执行日志将在这里显示 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Loading Section -->
+      <section class="loading-section" id="loadingSection" style="display: none;">
+        <div class="loading-animation">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">
+            <h3>🤖 AI正在工作中...</h3>
+            <p id="loadingMessage">正在分析你的想法</p>
+          </div>
+        </div>
+        <div class="loading-steps">
+          <div class="step" id="step1">
+            <div class="step-icon">1</div>
+            <span>分析想法</span>
+          </div>
+          <div class="step" id="step2">
+            <div class="step-icon">2</div>
+            <span>生成代码</span>
+          </div>
+          <div class="step" id="step3">
+            <div class="step-icon">3</div>
+            <span>执行测试</span>
+          </div>
+          <div class="step" id="step4">
+            <div class="step-icon">4</div>
+            <span>返回结果</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- History Section -->
+    <section class="history-section">
+      <div class="history-header">
+        <h3>📚 历史记录</h3>
+        <button id="clearHistoryBtn" class="btn btn-text">清空</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <!-- 历史记录将在这里显示 -->
+      </div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

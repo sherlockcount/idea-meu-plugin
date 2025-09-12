@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idea to MEU - 测试页面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .test-section {
+            margin-bottom: 32px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            color: #475569;
+            margin-bottom: 16px;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        .result.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status.online {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.offline {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Idea to MEU 测试页面</h1>
+        
+        <!-- 服务状态检查 -->
+        <div class="test-section">
+            <h2>📊 服务状态检查</h2>
+            <p>后端服务状态: <span id="backendStatus" class="status offline">检查中...</span></p>
+            <p>AI服务状态: <span id="aiStatus" class="status offline">检查中...</span></p>
+            <button onclick="checkBackendStatus()">重新检查</button>
+            <div id="statusResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <!-- API测试 -->
+        <div class="test-section">
+            <h2>🔧 API 功能测试</h2>
+            
+            <div class="input-group">
+                <label for="testIdea">测试想法:</label>
+                <textarea id="testIdea" placeholder="输入你想要测试的想法，例如：打印Hello World">打印Hello World</textarea>
+            </div>
+            
+            <div class="input-group">
+                <label for="testLanguage">编程语言:</label>
+                <select id="testLanguage">
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="bash">Bash</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                </select>
+            </div>
+            
+            <button onclick="testExecution()" id="testBtn">执行测试</button>
+            <div id="testResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <!-- 浏览器插件测试 -->
+        <div class="test-section">
+            <h2>🧩 浏览器插件测试</h2>
+            <p>请按照以下步骤测试浏览器插件:</p>
+            <ol>
+                <li>在Chrome中打开 <code>chrome://extensions/</code></li>
+                <li>启用"开发者模式"</li>
+                <li>点击"加载已解压的扩展程序"</li>
+                <li>选择项目中的 <code>extension</code> 文件夹</li>
+                <li>插件加载后，点击浏览器工具栏中的插件图标</li>
+                <li>在插件弹窗中输入想法并测试执行</li>
+            </ol>
+        </div>
+        
+        <!-- 完整流程测试 -->
+        <div class="test-section">
+            <h2>🔄 完整流程测试</h2>
+            <p>测试从想法输入到代码执行的完整流程:</p>
+            <button onclick="runFullTest()">运行完整测试</button>
+            <div id="fullTestResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+        
+        // 检查后端服务状态
+        async function checkBackendStatus() {
+            const statusElement = document.getElementById('backendStatus');
+            const aiStatusElement = document.getElementById('aiStatus');
+            const resultElement = document.getElementById('statusResult');
+            
+            statusElement.innerHTML = '<span class="loading"></span> 检查中...';
+            statusElement.className = 'status';
+            aiStatusElement.innerHTML = '<span class="loading"></span> 检查中...';
+            aiStatusElement.className = 'status';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    statusElement.textContent = '在线';
+                    statusElement.className = 'status online';
+                    
+                    // 检查AI服务状态
+                    const dbStatus = data.data.services.database.message;
+                    if (dbStatus.includes('模拟模式')) {
+                        aiStatusElement.textContent = '模拟模式';
+                        aiStatusElement.className = 'status offline';
+                        aiStatusElement.title = 'DeepSeek API未配置，使用模拟代码生成';
+                    } else {
+                        aiStatusElement.textContent = 'AI已配置';
+                        aiStatusElement.className = 'status online';
+                    }
+                    
+                    resultElement.textContent = JSON.stringify(data, null, 2);
+                    resultElement.className = 'result success';
+                } else {
+                    throw new Error('服务不健康');
+                }
+            } catch (error) {
+                statusElement.textContent = '离线';
+                statusElement.className = 'status offline';
+                aiStatusElement.textContent = '未知';
+                aiStatusElement.className = 'status offline';
+                resultElement.textContent = `错误: ${error.message}`;
+                resultElement.className = 'result error';
+            }
+            
+            resultElement.style.display = 'block';
+        }
+        
+        // 测试代码执行
+        async function testExecution() {
+            const idea = document.getElementById('testIdea').value;
+            const language = document.getElementById('testLanguage').value;
+            const button = document.getElementById('testBtn');
+            const resultElement = document.getElementById('testResult');
+            
+            if (!idea.trim()) {
+                alert('请输入测试想法');
+                return;
+            }
+            
+            button.disabled = true;
+            button.innerHTML = '<span class="loading"></span> 执行中...';
+            resultElement.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/execute`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ idea, language })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultElement.textContent = JSON.stringify(data, null, 2);
+                    resultElement.className = 'result success';
+                } else {
+                    throw new Error(data.error?.message || '执行失败');
+                }
+            } catch (error) {
+                resultElement.textContent = `错误: ${error.message}`;
+                resultElement.className = 'result error';
+            }
+            
+            button.disabled = false;
+            button.textContent = '执行测试';
+            resultElement.style.display = 'block';
+        }
+        
+        // 运行完整测试
+        async function runFullTest() {
+            const resultElement = document.getElementById('fullTestResult');
+            resultElement.style.display = 'block';
+            resultElement.className = 'result';
+            resultElement.textContent = '开始完整流程测试...\n';
+            
+            const tests = [
+                { name: '健康检查', url: '/health' },
+                { name: 'API信息', url: '/api/info' },
+                { name: '支持语言', url: '/api/languages' },
+                { name: '执行环境状态', url: '/api/execution/status' },
+            ];
+            
+            let allPassed = true;
+            
+            for (const test of tests) {
+                try {
+                    resultElement.textContent += `\n测试 ${test.name}...`;
+                    const response = await fetch(`${API_BASE}${test.url}`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        resultElement.textContent += ` ✅ 通过`;
+                    } else {
+                        resultElement.textContent += ` ❌ 失败: ${data.error?.message || '未知错误'}`;
+                        allPassed = false;
+                    }
+                } catch (error) {
+                    resultElement.textContent += ` ❌ 错误: ${error.message}`;
+                    allPassed = false;
+                }
+            }
+            
+            // 测试代码执行
+            try {
+                resultElement.textContent += '\n\n测试代码执行...';
+                const response = await fetch(`${API_BASE}/api/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idea: '打印当前时间', language: 'python' })
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultElement.textContent += ` ✅ 通过`;
+                } else {
+                    resultElement.textContent += ` ❌ 失败: ${data.error?.message || '未知错误'}`;
+                    allPassed = false;
+                }
+            } catch (error) {
+                resultElement.textContent += ` ❌ 错误: ${error.message}`;
+                allPassed = false;
+            }
+            
+            resultElement.textContent += `\n\n完整测试${allPassed ? '全部通过' : '存在失败项目'} ${allPassed ? '🎉' : '⚠️'}`;
+            resultElement.className = `result ${allPassed ? 'success' : 'error'}`;
+        }
+        
+        // 页面加载时自动检查状态
+        window.addEventListener('load', checkBackendStatus);
+    </script>
+</body>
+</html>
