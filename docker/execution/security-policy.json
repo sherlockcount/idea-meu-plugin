@@ -1,0 +1,157 @@
+{
+  "resourceLimits": {
+    "memory": "256m",
+    "cpus": "0.5",
+    "pids": 100,
+    "ulimits": {
+      "nofile": {
+        "soft": 1024,
+        "hard": 2048
+      },
+      "nproc": {
+        "soft": 64,
+        "hard": 128
+      },
+      "fsize": {
+        "soft": 10485760,
+        "hard": 20971520
+      }
+    },
+    "executionTimeout": 30,
+    "outputLimit": 10240
+  },
+  "securityOptions": {
+    "readOnly": true,
+    "noNewPrivileges": true,
+    "dropCapabilities": [
+      "ALL"
+    ],
+    "addCapabilities": [],
+    "seccompProfile": "default",
+    "apparmorProfile": "docker-default",
+    "selinuxOptions": {
+      "level": "s0:c123,c456"
+    }
+  },
+  "networkPolicy": {
+    "networkMode": "none",
+    "allowedPorts": [],
+    "dnsServers": []
+  },
+  "filesystemPolicy": {
+    "readOnlyPaths": [
+      "/",
+      "/usr",
+      "/lib",
+      "/lib64",
+      "/bin",
+      "/sbin"
+    ],
+    "maskedPaths": [
+      "/proc/acpi",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/sys/firmware"
+    ],
+    "tmpfsMounts": [
+      {
+        "destination": "/tmp",
+        "size": "100m",
+        "mode": "1777"
+      },
+      {
+        "destination": "/var/tmp",
+        "size": "50m",
+        "mode": "1777"
+      }
+    ],
+    "workspaceSize": "100m"
+  },
+  "allowedCommands": {
+    "python": [
+      "python3",
+      "pip3"
+    ],
+    "javascript": [
+      "node",
+      "npm"
+    ],
+    "java": [
+      "javac",
+      "java"
+    ],
+    "go": [
+      "go"
+    ],
+    "cpp": [
+      "g++",
+      "gcc"
+    ],
+    "c": [
+      "gcc"
+    ]
+  },
+  "blockedCommands": [
+    "sudo",
+    "su",
+    "passwd",
+    "useradd",
+    "userdel",
+    "usermod",
+    "groupadd",
+    "groupdel",
+    "mount",
+    "umount",
+    "chroot",
+    "systemctl",
+    "service",
+    "iptables",
+    "netstat",
+    "ss",
+    "lsof",
+    "ps",
+    "kill",
+    "killall",
+    "pkill",
+    "nohup",
+    "screen",
+    "tmux",
+    "crontab",
+    "at",
+    "batch",
+    "wget",
+    "curl",
+    "nc",
+    "netcat",
+    "telnet",
+    "ssh",
+    "scp",
+    "rsync",
+    "ftp",
+    "sftp"
+  ],
+  "environmentVariables": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/home/meuuser",
+    "USER": "meuuser",
+    "SHELL": "/bin/bash",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8"
+  },
+  "monitoring": {
+    "enableResourceMonitoring": true,
+    "enableSecurityAuditing": true,
+    "logLevel": "INFO",
+    "alertThresholds": {
+      "cpuUsage": 80,
+      "memoryUsage": 80,
+      "diskUsage": 90,
+      "executionTime": 25
+    }
+  }
+}

@@ -183,3 +183,16 @@ config/local.json
 # MEU project files
 projects/*/meu_plan.json
 projects/meu_*/
+
+# Generated execution files
+projects/*/step_*.js
+projects/*/step_*.py
+projects/*/step_*.java
+projects/*/step_*.go
+projects/*/step_*.cpp
+projects/*/step_*.c
+projects/*/step_*.rs
+projects/*/*.txt
+projects/*/*.json
+projects/*/output/
+projects/*/temp/

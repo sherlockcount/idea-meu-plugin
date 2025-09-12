@@ -9,7 +9,10 @@ const path = require('path');
  */
 class MEUService {
   constructor() {
-    this.projectsDir = path.join(__dirname, '../../projects');
+    // 在Docker容器中使用/app/projects，在本地开发中使用../../projects
+    this.projectsDir = process.env.DOCKER_EXECUTION === 'true' 
+      ? path.join('/app', 'projects')
+      : path.join(__dirname, '../../projects');
     this.ensureProjectsDir();
   }
 

@@ -5,7 +5,10 @@ const { aiRateLimit, executionRateLimit } = require('../middleware/rateLimiter')
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
 const aiService = require('../services/aiService');
+const dockerService = require('../services/dockerService');
 const databaseManager = require('../config/database');
+const fs = require('fs').promises;
+const path = require('path');
 
 // 应用执行速率限制
 router.use(executionRateLimit);
@@ -18,37 +21,112 @@ const generateCode = async (idea, language = 'python') => {
   return await aiService.generateCode(idea, language);
 };
 
-// 模拟代码执行
-const executeCode = async (code, language, executionId) => {
+// Docker容器中执行代码
+const executeCode = async (code, language, executionId, projectId, stepId) => {
+  const startTime = Date.now();
+  let containerName = null;
+  
+  try {
+    // 创建项目目录
+    const projectDir = process.env.DOCKER_EXECUTION === 'true'
+      ? path.join('/app', 'projects', projectId)
+      : path.join(__dirname, '../projects', projectId);
+    await fs.mkdir(projectDir, { recursive: true });
+    
+    // 写入代码文件
+    const fileExtension = getFileExtension(language);
+    const codeFileName = `step_${stepId}.${fileExtension}`;
+    const codeFilePath = path.join(projectDir, codeFileName);
+    await fs.writeFile(codeFilePath, code, 'utf8');
+    
+    // 创建执行容器
+    containerName = await dockerService.createExecutionContainer(projectId, stepId);
+    
+    // 在容器中执行代码
+    const result = await dockerService.executeInContainer(
+      containerName,
+      language,
+      projectId,
+      stepId,
+      codeFileName
+    );
+    
+    const executionTime = Date.now() - startTime;
+    
+    return {
+      success: result.success,
+      output: result.output || '代码执行完成',
+      error: result.error || null,
+      executionTime,
+      status: result.status,
+      containerName
+    };
+    
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    logger.error('Docker执行失败', {
+      executionId,
+      projectId,
+      stepId,
+      error: error.message,
+      executionTime
+    });
+    
+    return {
+      success: false,
+      output: '',
+      error: `执行失败: ${error.message}`,
+      executionTime
+    };
+  } finally {
+    // 清理容器
+    if (containerName) {
+      setTimeout(() => {
+        dockerService.stopContainer(containerName).catch(err => {
+          logger.warn('容器清理失败', { containerName, error: err.message });
+        });
+      }, 5000); // 5秒后清理容器
+    }
+  }
+};
+
+// 获取文件扩展名
+const getFileExtension = (language) => {
+  const extensions = {
+    python: 'py',
+    javascript: 'js',
+    java: 'java',
+    go: 'go',
+    cpp: 'cpp',
+    c: 'c'
+  };
+  return extensions[language] || 'txt';
+};
+
+// 兼容旧版本的模拟执行（作为备用）
+const simulateExecution = async (code, language) => {
   return new Promise((resolve) => {
-    // 模拟执行时间
-    const executionTime = Math.random() * 2000 + 500;
+    const executionTime = Math.random() * 1000 + 200;
     
     setTimeout(() => {
-      const success = Math.random() > 0.1; // 90%成功率
+      let output = '';
       
-      if (success) {
-        let output = '';
-        
-        // 根据代码内容生成模拟输出
-        if (code.includes('print') || code.includes('console.log') || code.includes('echo')) {
-          if (code.includes('Hello')) {
-            output = 'Hello, World!';
-          } else if (code.includes('时间') || code.includes('date') || code.includes('Date')) {
-            output = new Date().toLocaleString('zh-CN');
-          } else if (code.includes('随机') || code.includes('random') || code.includes('Random')) {
-            output = `随机数: ${Math.floor(Math.random() * 100) + 1}`;
-          } else if (code.includes('计算') || code.includes('result')) {
-            output = '结果: 4';
-          } else if (code.includes('文件') || code.includes('file')) {
-            output = '文件已创建';
-          } else {
-            output = '代码执行成功';
-          }
+      if (code.includes('print') || code.includes('console.log') || code.includes('echo')) {
+        if (code.includes('Hello')) {
+          output = 'Hello, World!';
+        } else if (code.includes('时间') || code.includes('date') || code.includes('Date')) {
+          output = new Date().toLocaleString('zh-CN');
         } else {
-          output = '代码执行完成';
+          output = '代码执行成功';
         }
-        
+      } else {
+        output = '代码执行完成';
+      }
+      
+      // 模拟成功和失败的情况
+      const shouldSucceed = Math.random() > 0.1; // 90%成功率
+      
+      if (shouldSucceed) {
         resolve({
           success: true,
           output,
@@ -62,15 +140,25 @@ const executeCode = async (code, language, executionId) => {
           }
         });
       } else {
+        // 模拟各种失败情况
+        const errorTypes = [
+          '语法错误: 代码存在语法问题',
+          '运行时错误: 变量未定义',
+          '内存错误: 内存不足',
+          '超时错误: 执行时间过长',
+          '权限错误: 访问被拒绝'
+        ];
+        const randomError = errorTypes[Math.floor(Math.random() * errorTypes.length)];
+        
         resolve({
           success: false,
           output: '',
-          error: '执行错误: 模拟的执行失败',
-          exitCode: 1,
+          error: `执行失败: ${randomError}`,
+          exitCode: Math.floor(Math.random() * 3) + 1, // 1-3的错误码
           executionTime: Math.round(executionTime),
           resourceUsage: {
-            cpu: '5%',
-            memory: '20MB',
+            cpu: `${Math.floor(Math.random() * 20 + 5)}%`,
+            memory: `${Math.floor(Math.random() * 50 + 20)}MB`,
             duration: `${Math.round(executionTime)}ms`
           }
         });
@@ -94,13 +182,17 @@ router.post('/', executionRateLimit, asyncHandler(async (req, res) => {
   }
   
   const executionId = uuidv4();
+  const projectId = options.projectId || uuidv4();
+  const stepId = options.stepId || '1';
   const startTime = Date.now();
   
   logger.info('开始执行想法', {
     executionId,
     idea: idea.substring(0, 100),
     language,
-    options
+    options,
+    projectId,
+    stepId
   });
   
   try {
@@ -120,8 +212,30 @@ router.post('/', executionRateLimit, asyncHandler(async (req, res) => {
     // 1. AI生成代码
     const codeGeneration = await generateCode(idea, language);
     
-    // 2. 执行代码
-    const executionResult = await executeCode(codeGeneration.code, language, executionId);
+    // 2. 检查Docker服务是否可用并执行代码
+    let dockerAvailable = true;
+    try {
+      await dockerService.checkDockerAvailability();
+    } catch (error) {
+      dockerAvailable = false;
+      logger.warn('Docker不可用', { error: error.message });
+    }
+    let executionResult;
+    
+    if (dockerAvailable) {
+      // 使用Docker容器执行
+      executionResult = await executeCode(codeGeneration.code, language, executionId, projectId, stepId);
+      logger.info('Docker容器执行完成', {
+        executionId,
+        success: executionResult.success,
+        containerName: executionResult.containerName
+      });
+    } else {
+      // 降级到模拟执行
+      logger.warn('Docker不可用，使用模拟执行', { executionId });
+      executionResult = await simulateExecution(codeGeneration.code, language);
+      executionResult.fallback = true;
+    }
     
     const totalTime = Date.now() - startTime;
     
