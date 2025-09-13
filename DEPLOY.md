@@ -13,7 +13,7 @@
 
 ```bash
 git clone <repository-url>
-cd idea-to-meu-plugin
+cd idea-meu-plugin
 ```
 
 ### 2. 安装依赖
@@ -56,7 +56,7 @@ DEEPSEEK_MODEL=deepseek-coder
 DOCKER_EXECUTION=true
 # 跨设备兼容性：指定项目根目录的绝对路径
 # 在不同设备上部署时，请修改为实际的项目路径
-HOST_PROJECT_ROOT=/path/to/your/idea-to-meu-plugin
+HOST_PROJECT_ROOT=/path/to/your/idea-meu-plugin
 
 # 安全配置
 JWT_SECRET=your-secure-jwt-secret
@@ -111,13 +111,13 @@ npm run dev
    
    在 `backend/.env` 文件中配置：
    ```env
-   HOST_PROJECT_ROOT=/absolute/path/to/your/idea-to-meu-plugin
+   HOST_PROJECT_ROOT=/absolute/path/to/your/idea-meu-plugin
    ```
    
    示例路径：
-   - macOS: `/Users/username/idea-to-meu-plugin`
-   - Linux: `/home/username/idea-to-meu-plugin`
-   - Windows (WSL): `/mnt/c/Users/username/idea-to-meu-plugin`
+   - macOS: `/Users/username/idea-meu-plugin`
+- Linux: `/home/username/idea-meu-plugin`
+- Windows (WSL): `/mnt/c/Users/username/idea-meu-plugin`
 
 2. **Docker文件共享设置**
    
@@ -188,7 +188,7 @@ services:
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/idea-meu?authSource=admin
       DOCKER_EXECUTION: "true"
       # 跨设备兼容性：指定项目根目录的绝对路径
-      HOST_PROJECT_ROOT: "/path/to/your/idea-to-meu-plugin"
+      HOST_PROJECT_ROOT: "/path/to/your/idea-meu-plugin"
     ports:
       - "3000:3000"
     depends_on:
@@ -196,7 +196,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # 挂载项目目录以支持代码执行
-      - "/path/to/your/idea-to-meu-plugin/projects:/app/projects"
+      - "/path/to/your/idea-meu-plugin/projects:/app/projects"
 
   frontend:
     build: .
@@ -345,7 +345,7 @@ pm2 restart all
    ```bash
    # 1. 确保HOST_PROJECT_ROOT环境变量设置正确
    # 在.env文件中设置项目的绝对路径
-   HOST_PROJECT_ROOT=/Users/username/path/to/idea-to-meu-plugin
+   HOST_PROJECT_ROOT=/Users/username/path/to/idea-meu-plugin
    
    # 2. 检查Docker文件共享设置
    # 在Docker Desktop中，确保项目目录已添加到文件共享列表
@@ -440,8 +440,8 @@ su - meuapp
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/idea-to-meu-plugin.git
-cd idea-to-meu-plugin
+git clone https://github.com/your-username/idea-meu-plugin.git
+cd idea-meu-plugin
 
 # 配置环境变量
 cp backend/.env.example backend/.env
@@ -466,11 +466,11 @@ NODE_ENV=production
 JWT_SECRET=your_super_secure_jwt_secret_key_here
 
 # 项目路径（云服务器绝对路径）
-HOST_PROJECT_ROOT=/home/meuapp/idea-to-meu-plugin
+HOST_PROJECT_ROOT=/home/meuapp/idea-meu-plugin
 
 # 日志配置
 LOG_LEVEL=info
-LOG_FILE=/home/meuapp/idea-to-meu-plugin/backend/logs/app.log
+LOG_FILE=/home/meuapp/idea-meu-plugin/backend/logs/app.log
 ```
 
 ### 5. 构建和启动服务
@@ -617,7 +617,7 @@ sudo vim /etc/logrotate.d/meu-app
 ```
 
 ```
-/home/meuapp/idea-to-meu-plugin/backend/logs/*.log {
+/home/meuapp/idea-meu-plugin/backend/logs/*.log {
     daily
     missingok
     rotate 30

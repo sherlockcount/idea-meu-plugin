@@ -142,15 +142,15 @@ install_pm2() {
 clone_project() {
     log_info "克隆项目..."
     
-    if [[ -d "idea-to-meu-plugin" ]]; then
+    if [[ -d "idea-meu-plugin" ]]; then
         log_info "项目目录已存在，更新代码..."
-        cd idea-to-meu-plugin
+        cd idea-meu-plugin
         git pull origin main
         cd ..
     else
         read -p "请输入项目 Git 仓库地址: " REPO_URL
         git clone $REPO_URL
-        cd idea-to-meu-plugin
+        cd idea-meu-plugin
         cd ..
     fi
     
@@ -161,7 +161,7 @@ clone_project() {
 setup_environment() {
     log_info "配置环境变量..."
     
-    cd idea-to-meu-plugin
+    cd idea-meu-plugin
     
     if [[ ! -f "backend/.env" ]]; then
         if [[ -f ".env.production" ]]; then
@@ -191,7 +191,7 @@ setup_environment() {
 install_dependencies() {
     log_info "安装项目依赖..."
     
-    cd idea-to-meu-plugin
+    cd idea-meu-plugin
     
     npm install
     cd backend && npm install && cd ..
@@ -204,7 +204,7 @@ install_dependencies() {
 build_docker_image() {
     log_info "构建 Docker 执行环境镜像..."
     
-    cd idea-to-meu-plugin
+    cd idea-meu-plugin
     
     docker build -t meu-executor:latest docker/execution/
     
@@ -238,7 +238,7 @@ start_database() {
 start_services() {
     log_info "启动应用服务..."
     
-    cd idea-to-meu-plugin
+    cd idea-meu-plugin
     
     # 创建日志目录
     mkdir -p backend/logs
@@ -320,7 +320,7 @@ show_deployment_info() {
     echo "============================================"
     echo "前端地址: http://$(curl -s ifconfig.me):3001"
     echo "后端API: http://$(curl -s ifconfig.me):3000"
-    echo "项目路径: $(pwd)/idea-to-meu-plugin"
+    echo "项目路径: $(pwd)/idea-meu-plugin"
     echo ""
     echo "============================================"
     echo "🔧 常用命令"

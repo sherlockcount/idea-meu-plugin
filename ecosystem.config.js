@@ -46,8 +46,8 @@ module.exports = {
       user: 'meuapp',
       host: ['your-server-ip'],
       ref: 'origin/main',
-      repo: 'https://github.com/your-username/idea-to-meu-plugin.git',
-      path: '/home/meuapp/idea-to-meu-plugin',
+      repo: 'https://github.com/your-username/idea-meu-plugin.git',
+    path: '/home/meuapp/idea-meu-plugin',
       'post-deploy': 'npm install && cd backend && npm install && cd .. && docker build -t meu-executor:latest docker/execution/ && pm2 reload ecosystem.config.js --env production'
     }
   }

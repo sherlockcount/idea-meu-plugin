@@ -1,5 +1,5 @@
 {
-  "name": "idea-to-meu-frontend",
+  "name": "idea-meu-plugin-frontend",
   "version": "1.0.0",
   "description": "Idea to MEU - 智能项目构建助手前端",
   "main": "app.js",

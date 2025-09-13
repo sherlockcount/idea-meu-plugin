@@ -26,7 +26,7 @@
 ### 1. 克隆项目
 ```bash
 git clone <repository-url>
-cd idea-to-meu-plugin
+cd idea-meu-plugin
 ```
 
 ### 2. 安装依赖
@@ -67,7 +67,7 @@ npm start
 ## 📁 项目结构
 
 ```
-idea-to-meu-plugin/
+idea-meu-plugin/
 ├── manifest.json          # 浏览器插件配置
 ├── popup.html            # 插件弹窗界面
 ├── popup.js              # 插件前端逻辑
