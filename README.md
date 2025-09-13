@@ -1,41 +1,41 @@
-# 💡 Idea → MEU  从想法到最小可执行单元
+#  Idea → MEU  从想法到最小可执行单元
 
 一个完整的浏览器插件 + 后端系统，让AI在安全的容器环境中将你的想法转化为可执行的代码。
 
-## 🎯 项目概述
+##  项目概述
 
 **Idea → MEU** 是一个生产级的全栈应用，包含：
-- 🌐 **网页**：现代化UI界面，支持想法输入和结果展示
-- 🚀 **Node.js后端服务**：RESTful API，集成AI服务和Docker执行环境
-- 🗄️ **MongoDB数据库**：持久化存储想法、执行历史和用户数据
-- 🐳 **Docker容器化**：完整的生产环境部署方案
-- 🤖 **AI集成**：支持DeepSeek等多种AI模型切换
-- 🛡️ **安全执行**：在隔离的Linux容器中安全运行生成的代码
+-  **网页**：现代化UI界面，支持想法输入和结果展示
+-  **Node.js后端服务**：RESTful API，集成AI服务和Docker执行环境
+-  **MongoDB数据库**：持久化存储想法、执行历史和用户数据
+-  **Docker容器化**：完整的生产环境部署方案
+-  **AI集成**：支持DeepSeek等多种AI模型切换
+-  **安全执行**：在隔离的Linux容器中安全运行生成的代码
 
-## ✨ 已实现功能
+##  已实现功能
 
-### 🌐 网页
-- ✅ **现代化UI**：基于Tailwind CSS的响应式界面
-- ✅ **实时交互**：与后端API的实时通信
-- ✅ **本地存储**：想法和历史记录的本地缓存
+###  网页
+-  **现代化UI**：基于Tailwind CSS的响应式界面
+-  **实时交互**：与后端API的实时通信
+-  **本地存储**：想法和历史记录的本地缓存
 
-### 🚀 后端服务
-- ✅ **Express.js框架**：RESTful API服务
-- ✅ **MongoDB集成**：完整的数据持久化方案
-- ✅ **AI服务集成**：支持DeepSeek、OpenAI等多种AI模型
-- ✅ **Docker执行环境**：安全的代码执行容器
-- ✅ **Swagger文档**：完整的API文档
-- ✅ **日志系统**：基于Winston的结构化日志
-- ✅ **安全中间件**：CORS、Helmet、速率限制等
+###  后端服务
+-  **Express.js框架**：RESTful API服务
+-  **MongoDB集成**：完整的数据持久化方案
+-  **AI服务集成**：支持DeepSeek、OpenAI等多种AI模型
+-  **Docker执行环境**：安全的代码执行容器
+-  **Swagger文档**：完整的API文档
+-  **日志系统**：基于Winston的结构化日志
+-  **安全中间件**：CORS、Helmet、速率限制等
 
-### 🐳 容器化部署
-- ✅ **Docker Compose**：一键部署整个应用栈
-- ✅ **MongoDB容器**：数据库服务容器化
-- ✅ **Mongo Express**：数据库管理界面
-- ✅ **网络隔离**：安全的容器网络配置
-- ✅ **数据持久化**：Docker卷管理
+###  容器化部署
+-  **Docker Compose**：一键部署整个应用栈
+-  **MongoDB容器**：数据库服务容器化
+-  **Mongo Express**：数据库管理界面
+-  **网络隔离**：安全的容器网络配置
+-  **数据持久化**：Docker卷管理
 
-## 🚀 快速开始
+##  快速开始
 
 ### 方式一：Docker部署（推荐）
 
@@ -61,10 +61,10 @@ npm run dev
 ```
 
 服务启动后：
-- 🌐 后端API：http://localhost:3000
-- 📊 API文档：http://localhost:3000/api-docs
-- 🗄️ 数据库管理：http://localhost:8081
-- 🌐 前端：http://localhost:3001
+-  后端API：http://localhost:3000
+-  API文档：http://localhost:3000/api-docs
+-  数据库管理：http://localhost:8081
+-  前端：http://localhost:3001
 
 ### 方式二：开发环境
 
@@ -94,7 +94,7 @@ npm run dev
 ```
 
 
-## 🏗️ 技术架构
+##  技术架构
 
 ### 核心技术栈
 - **前端**：Html + Tailwind CSS
@@ -139,7 +139,7 @@ idea-meu-plugin/
 └── setup-ai.sh             # AI服务配置脚本
 ```
 
-## 🔧 环境配置
+##  环境配置
 
 ### 必需的环境变量
 
@@ -173,7 +173,7 @@ LOG_LEVEL=info
 
 或查看详细配置说明：[AI_SETUP.md](AI_SETUP.md)
 
-## 🛠️ API接口
+##  API接口
 
 ### 核心端点
 
@@ -204,7 +204,7 @@ GET /api/history
 GET /api-docs
 ```
 
-## 🧪 测试和验证
+##  测试和验证
 
 ### 使用curl测试API
 
@@ -223,7 +223,7 @@ curl -X POST http://localhost:3000/api/execute \
   -d '{"idea":"打印Hello World","language":"python"}'
 ```
 
-## 🔒 安全特性
+##  安全特性
 
 - **容器隔离**：代码在独立的Docker容器中执行
 - **速率限制**：防止API滥用和DDoS攻击
@@ -233,7 +233,7 @@ curl -X POST http://localhost:3000/api/execute \
 - **日志监控**：完整的操作审计日志
 - **JWT认证**：用户身份验证和授权
 
-## 🚨 故障排除
+##  故障排除
 
 ### 常见问题
 
@@ -276,7 +276,7 @@ docker-compose -f docker-compose.yml logs -f backend
 docker-compose -f docker-compose.yml logs -f mongodb
 ```
 
-## 📊 监控和维护
+##  监控和维护
 
 ### 服务监控
 
@@ -295,7 +295,7 @@ docker exec meu-mongodb mongodump --out /backup
 docker exec meu-mongodb mongorestore /backup
 ```
 
-## 🤝 贡献指南
+##  贡献指南
 
 1. Fork 项目仓库
 2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
@@ -310,7 +310,7 @@ docker exec meu-mongodb mongorestore /backup
 - 更新API文档
 - 添加适当的日志记录
 
-## 📄 许可证
+##  许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
 
@@ -325,4 +325,4 @@ docker exec meu-mongodb mongorestore /backup
 
 ⭐ 如果这个项目对您有帮助，请给它一个星标！
 
-📧 问题反馈：请提交 [Issue](https://github.com/RATING3PRO/idea-meu-plugin/issues)
+ 问题反馈：请提交 [Issue](https://github.com/RATING3PRO/idea-meu-plugin/issues)
