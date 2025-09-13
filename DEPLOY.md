@@ -100,6 +100,7 @@ npm run dev
 - **后端API**: http://localhost:3000
 - **健康检查**: http://localhost:3000/health
 - **API文档**: http://localhost:3000/api
+- **Swagger UI**: http://localhost:3000/api-docs
 
 ## 🔄 跨设备部署配置
 
