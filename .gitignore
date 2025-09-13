@@ -6,6 +6,9 @@ yarn-error.log*
 package-lock.json
 yarn.lock
 
+# Project documentation (excluded from repository)
+idea.md
+
 # Environment variables
 .env
 .env.local
