@@ -373,6 +373,413 @@ LOG_LEVEL=debug
 LOG_LEVEL=info
 ```
 
+## ☁️ 云主机部署
+
+### 1. 云服务器选择
+
+**推荐配置**:
+- CPU: 2核心以上
+- 内存: 4GB以上
+- 存储: 40GB以上 SSD
+- 带宽: 5Mbps以上
+- 操作系统: Ubuntu 20.04 LTS / CentOS 8
+
+**主流云服务商**:
+- 阿里云 ECS
+- 腾讯云 CVM
+- AWS EC2
+- Google Cloud Compute Engine
+- 华为云 ECS
+
+### 2. 服务器初始化
+
+```bash
+# 更新系统
+sudo apt update && sudo apt upgrade -y  # Ubuntu
+# 或
+sudo yum update -y  # CentOS
+
+# 安装必要工具
+sudo apt install -y curl wget git vim htop  # Ubuntu
+# 或
+sudo yum install -y curl wget git vim htop  # CentOS
+
+# 创建应用用户
+sudo useradd -m -s /bin/bash meuapp
+sudo usermod -aG sudo meuapp
+
+# 切换到应用用户
+su - meuapp
+```
+
+### 3. 安装运行环境
+
+```bash
+# 安装 Node.js (使用 NodeSource 仓库)
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs  # Ubuntu
+# 或
+curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+sudo yum install -y nodejs  # CentOS
+
+# 安装 Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+
+# 安装 Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# 重新登录以应用 Docker 组权限
+exit
+su - meuapp
+```
+
+### 4. 部署应用
+
+```bash
+# 克隆项目
+git clone https://github.com/your-username/idea-to-meu-plugin.git
+cd idea-to-meu-plugin
+
+# 配置环境变量
+cp backend/.env.example backend/.env
+vim backend/.env
+```
+
+**生产环境配置示例**:
+```env
+# 数据库配置
+MONGODB_URI=mongodb://localhost:27017/meu_production
+
+# AI服务配置
+DEEPSEEK_API_KEY=your_production_api_key
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+
+# 服务配置
+PORT=3000
+FRONTEND_PORT=3001
+NODE_ENV=production
+
+# JWT配置
+JWT_SECRET=your_super_secure_jwt_secret_key_here
+
+# 项目路径（云服务器绝对路径）
+HOST_PROJECT_ROOT=/home/meuapp/idea-to-meu-plugin
+
+# 日志配置
+LOG_LEVEL=info
+LOG_FILE=/home/meuapp/idea-to-meu-plugin/backend/logs/app.log
+```
+
+### 5. 构建和启动服务
+
+```bash
+# 安装依赖
+npm install
+cd backend && npm install && cd ..
+
+# 构建 Docker 镜像
+docker build -t meu-executor:latest docker/execution/
+
+# 启动 MongoDB
+docker run -d --name mongodb \
+  -p 27017:27017 \
+  -v mongodb_data:/data/db \
+  --restart unless-stopped \
+  mongo:latest
+
+# 安装 PM2
+npm install -g pm2
+
+# 启动后端服务
+cd backend
+pm2 start server.js --name "meu-backend" --env production
+cd ..
+
+# 启动前端服务
+pm2 start app.js --name "meu-frontend" --env production
+
+# 保存 PM2 配置
+pm2 save
+pm2 startup
+```
+
+### 6. 域名和SSL配置
+
+**安装 Nginx**:
+```bash
+sudo apt install nginx  # Ubuntu
+# 或
+sudo yum install nginx  # CentOS
+
+sudo systemctl start nginx
+sudo systemctl enable nginx
+```
+
+**配置域名解析**:
+- 在域名服务商处添加 A 记录，指向云服务器公网IP
+- 等待 DNS 解析生效（通常5-30分钟）
+
+**申请免费SSL证书（Let's Encrypt）**:
+```bash
+# 安装 Certbot
+sudo apt install certbot python3-certbot-nginx  # Ubuntu
+# 或
+sudo yum install certbot python3-certbot-nginx  # CentOS
+
+# 申请证书
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+```
+
+**Nginx配置文件** (`/etc/nginx/sites-available/meu-app`):
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com www.your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com www.your-domain.com;
+    
+    # SSL 配置（Certbot 自动生成）
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    
+    # 安全头
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    
+    # 前端代理
+    location / {
+        proxy_pass http://localhost:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    # API代理
+    location /api {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # 增加超时时间（代码执行可能需要较长时间）
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+    
+    # 静态文件缓存
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        proxy_pass http://localhost:3001;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+**启用配置**:
+```bash
+sudo ln -s /etc/nginx/sites-available/meu-app /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 7. 防火墙配置
+
+```bash
+# Ubuntu (UFW)
+sudo ufw allow ssh
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+
+# CentOS (firewalld)
+sudo firewall-cmd --permanent --add-service=ssh
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
+```
+
+### 8. 监控和备份
+
+**设置日志轮转**:
+```bash
+sudo vim /etc/logrotate.d/meu-app
+```
+
+```
+/home/meuapp/idea-to-meu-plugin/backend/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    copytruncate
+}
+```
+
+**数据库备份脚本**:
+```bash
+#!/bin/bash
+# /home/meuapp/backup-db.sh
+
+BACKUP_DIR="/home/meuapp/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p $BACKUP_DIR
+
+# 备份 MongoDB
+docker exec mongodb mongodump --out /tmp/backup_$DATE
+docker cp mongodb:/tmp/backup_$DATE $BACKUP_DIR/
+
+# 删除7天前的备份
+find $BACKUP_DIR -type d -mtime +7 -exec rm -rf {} +
+
+echo "Backup completed: $BACKUP_DIR/backup_$DATE"
+```
+
+**设置定时备份**:
+```bash
+chmod +x /home/meuapp/backup-db.sh
+crontab -e
+
+# 添加以下行（每天凌晨2点备份）
+0 2 * * * /home/meuapp/backup-db.sh
+```
+
+### 9. 性能优化
+
+**PM2 集群模式**:
+```bash
+# 创建 PM2 配置文件
+vim ecosystem.config.js
+```
+
+```javascript
+module.exports = {
+  apps: [
+    {
+      name: 'meu-backend',
+      script: 'backend/server.js',
+      instances: 'max',
+      exec_mode: 'cluster',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000
+      }
+    },
+    {
+      name: 'meu-frontend',
+      script: 'app.js',
+      instances: 2,
+      exec_mode: 'cluster',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3001
+      }
+    }
+  ]
+};
+```
+
+```bash
+# 使用配置文件启动
+pm2 start ecosystem.config.js
+```
+
+**Nginx 性能调优**:
+```nginx
+# 在 /etc/nginx/nginx.conf 的 http 块中添加
+worker_processes auto;
+worker_connections 1024;
+
+# 启用 gzip 压缩
+gzip on;
+gzip_vary on;
+gzip_min_length 1024;
+gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+
+# 客户端缓存
+client_max_body_size 10M;
+client_body_timeout 60;
+client_header_timeout 60;
+keepalive_timeout 65;
+send_timeout 60;
+```
+
+### 10. 云服务商特定配置
+
+**阿里云 ECS**:
+- 在安全组中开放 80、443、22 端口
+- 配置弹性公网IP
+- 可选：配置负载均衡 SLB
+
+**腾讯云 CVM**:
+- 在安全组中开放相应端口
+- 配置弹性公网IP
+- 可选：配置负载均衡 CLB
+
+**AWS EC2**:
+- 配置 Security Groups
+- 分配 Elastic IP
+- 可选：配置 Application Load Balancer
+
+### 11. 故障排除
+
+**常见云部署问题**:
+
+1. **端口访问问题**
+   ```bash
+   # 检查端口监听
+   sudo netstat -tlnp | grep :3000
+   sudo netstat -tlnp | grep :3001
+   
+   # 检查防火墙
+   sudo ufw status  # Ubuntu
+   sudo firewall-cmd --list-all  # CentOS
+   ```
+
+2. **域名解析问题**
+   ```bash
+   # 检查DNS解析
+   nslookup your-domain.com
+   dig your-domain.com
+   ```
+
+3. **SSL证书问题**
+   ```bash
+   # 检查证书状态
+   sudo certbot certificates
+   
+   # 测试证书续期
+   sudo certbot renew --dry-run
+   ```
+
+4. **服务状态检查**
+   ```bash
+   # 检查PM2状态
+   pm2 status
+   pm2 logs
+   
+   # 检查Nginx状态
+   sudo systemctl status nginx
+   sudo nginx -t
+   
+   # 检查Docker容器
+   docker ps
+   docker logs mongodb
+   ```
+
 ## 📞 技术支持
 
 如遇到部署问题，请检查：
@@ -382,7 +789,10 @@ LOG_LEVEL=info
 3. Docker服务是否正常运行
 4. 网络连接是否正常
 5. 查看应用日志获取详细错误信息
+6. 云服务商安全组/防火墙配置
+7. 域名DNS解析状态
+8. SSL证书有效性
 
 ---
 
-**注意**: 首次部署建议在测试环境中验证所有功能正常后再部署到生产环境。
+**注意**: 首次部署建议在测试环境中验证所有功能正常后再部署到生产环境。云主机部署需要额外注意安全配置和性能优化。
